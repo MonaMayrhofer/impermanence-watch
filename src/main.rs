@@ -1,15 +1,28 @@
 use std::path::Path;
 
-use crate::dir_diff::format_dir_diff;
+use clap::Parser as _;
 
+use crate::{
+    cli::Cli,
+    dir_diff::{LeftRightBoth, format_dir_diff},
+    tui::tui,
+};
+
+pub mod cli;
 pub mod dir_diff;
+pub mod thunk;
+pub mod tui;
 
 fn main() {
-    let a = dir_diff::dir_diff(
-        Some(Path::new(
-            "/impermanence/current_root_on_boot_snapshot/home/nionidh/",
-        )),
-        Some(Path::new("/home/nionidh")),
-    );
-    format_dir_diff(&a);
+    let args = Cli::parse();
+
+    if args.interactive {
+        tui().unwrap();
+    } else {
+        let mut a = dir_diff::dir_diff(LeftRightBoth::Both(
+            Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/").to_owned(),
+            Path::new("/home/nionidh").to_owned(),
+        ));
+        format_dir_diff(&mut a);
+    }
 }

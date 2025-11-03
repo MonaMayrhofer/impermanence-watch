@@ -10,6 +10,9 @@ use std::{
 };
 
 use colored::Colorize as _;
+use walkdir::DirEntry;
+
+use crate::thunk::Thunk;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum LeftRightBoth<T> {
@@ -36,28 +39,54 @@ impl<T> LeftRightBoth<T> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum DiffStatus<TModified> {
-    OnlyInA,
-    OnlyInB,
-    InBoth { diff: TModified },
+#[derive(Clone, Debug)]
+pub enum DiffStatus<TData, TModified> {
+    OnlyInA {
+        path: PathBuf,
+        content: TData,
+    },
+    OnlyInB {
+        path: PathBuf,
+        content: TData,
+    },
+    InBoth {
+        before: PathBuf,
+        after: PathBuf,
+        diff: TModified,
+    },
 }
 
 pub enum DirDiffEntry {
     File {
-        status: DiffStatus<(SystemTime, SystemTime)>,
+        status: DiffStatus<Thunk<SystemTime>, Thunk<(SystemTime, SystemTime)>>,
     },
     Symlink {
-        target: LeftRightBoth<PathBuf>,
+        target: DiffStatus<Thunk<PathBuf>, Thunk<(PathBuf, PathBuf)>>,
     },
     Dir {
-        result: DiffStatus<DirDiffResult>,
+        result: DiffStatus<Thunk<DirDiffData>, Thunk<DirDiffData>>,
     },
     Skipped,
 }
 
-pub struct DirDiffResult {
-    pub paths: HashMap<PathBuf, DirDiffEntry>,
+pub struct DirDiffData {
+    pub entries: HashMap<PathBuf, DirDiffEntry>,
+}
+
+impl DirDiffData {
+    pub fn has_meaningful_changes(&mut self) -> bool {
+        self.entries.iter_mut().any(|(_, diff)| match diff {
+            DirDiffEntry::File { .. } | DirDiffEntry::Symlink { .. } => true,
+            DirDiffEntry::Dir { result } => match result {
+                DiffStatus::OnlyInA { .. } | DiffStatus::OnlyInB { .. } => true,
+                DiffStatus::InBoth { diff, .. } => {
+                    let diff = diff.get_mut();
+                    diff.has_meaningful_changes()
+                }
+            },
+            DirDiffEntry::Skipped => false,
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -67,9 +96,42 @@ enum DirDiffKey {
     Symlink(PathBuf),
     Unknown(PathBuf),
 }
+pub fn dir_diff(paths: LeftRightBoth<PathBuf>) -> DirDiffEntry {
+    match paths {
+        LeftRightBoth::Right(after) => DirDiffEntry::Dir {
+            result: DiffStatus::OnlyInB {
+                path: after.clone(),
+                content: Thunk::lazy(move || dir_diff_rec(None, Some(after.as_path()))),
+            },
+        },
+        LeftRightBoth::Left(before) => DirDiffEntry::Dir {
+            result: DiffStatus::OnlyInA {
+                path: before.clone(),
+                content: Thunk::lazy(move || dir_diff_rec(Some(before.as_path()), None)),
+            },
+        },
 
-pub fn dir_diff(before_root: Option<&Path>, after_root: Option<&Path>) -> DirDiffResult {
+        LeftRightBoth::Both(before, after) => DirDiffEntry::Dir {
+            result: DiffStatus::InBoth {
+                after: after.clone(),
+                before: before.clone(),
+                diff: Thunk::lazy(move || {
+                    dir_diff_rec(Some(before.as_path()), Some(after.as_path()))
+                }),
+            },
+        },
+    }
+}
+
+pub fn dir_diff_rec(before_root: Option<&Path>, after_root: Option<&Path>) -> DirDiffData {
     let mut map = HashMap::new();
+
+    let before_root = before_root.filter(|it| {
+        it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
+    });
+    let after_root = after_root.filter(|it| {
+        it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
+    });
 
     if let Some(before) = before_root {
         let before_dev = before.symlink_metadata().unwrap().dev();
@@ -135,55 +197,58 @@ pub fn dir_diff(before_root: Option<&Path>, after_root: Option<&Path>) -> DirDif
                 path_buf,
                 match entry {
                     LeftRightBoth::Left(before) => DirDiffEntry::File {
-                        status: DiffStatus::OnlyInA,
+                        status: DiffStatus::OnlyInA {
+                            content: Thunk::present(before.metadata().unwrap().modified().unwrap()),
+                            path: before,
+                        },
                     },
                     LeftRightBoth::Right(after) => DirDiffEntry::File {
-                        status: DiffStatus::OnlyInB,
+                        status: DiffStatus::OnlyInB {
+                            content: Thunk::present(after.metadata().unwrap().modified().unwrap()),
+                            path: after,
+                        },
                     },
                     LeftRightBoth::Both(before, after) => DirDiffEntry::File {
                         status: DiffStatus::InBoth {
-                            diff: (
+                            diff: Thunk::present((
                                 before.metadata().unwrap().modified().unwrap(),
                                 after.metadata().unwrap().modified().unwrap(),
-                            ),
+                            )),
+                            before,
+                            after,
                         },
                     },
                 },
             ),
             DirDiffKey::Dir(path_buf) => {
-                let res = match entry {
-                    LeftRightBoth::Left(before) => DiffStatus::OnlyInA,
-                    LeftRightBoth::Right(after) => DiffStatus::OnlyInB,
-                    LeftRightBoth::Both(before, after) => {
-                        let before_is_boundary = before.metadata().unwrap().dev()
-                            != before.parent().unwrap().metadata().unwrap().dev();
-                        let after_is_boundary = after.metadata().unwrap().dev()
-                            != after.parent().unwrap().metadata().unwrap().dev();
-
-                        DiffStatus::InBoth {
-                            diff: dir_diff(
-                                before_is_boundary.not().then_some(&before),
-                                after_is_boundary.not().then_some(&after),
-                            ),
-                        }
-                    }
-                };
-                (path_buf, DirDiffEntry::Dir { result: res })
+                let res = dir_diff(entry);
+                (path_buf, res)
             }
             DirDiffKey::Symlink(path_buf) => (
                 path_buf,
                 match entry {
                     LeftRightBoth::Left(before) => DirDiffEntry::Symlink {
-                        target: LeftRightBoth::Left(std::fs::read_link(before).unwrap()),
+                        target: DiffStatus::OnlyInA {
+                            path: before.clone(),
+                            content: Thunk::present(std::fs::read_link(before).unwrap()),
+                        },
                     },
                     LeftRightBoth::Right(after) => DirDiffEntry::Symlink {
-                        target: LeftRightBoth::Right(std::fs::read_link(after).unwrap()),
+                        target: DiffStatus::OnlyInA {
+                            path: after.clone(),
+                            content: Thunk::present(std::fs::read_link(after).unwrap()),
+                        },
                     },
+
                     LeftRightBoth::Both(before, after) => DirDiffEntry::Symlink {
-                        target: LeftRightBoth::Both(
-                            std::fs::read_link(before).unwrap(),
-                            std::fs::read_link(after).unwrap(),
-                        ),
+                        target: DiffStatus::InBoth {
+                            after: after.clone(),
+                            before: before.clone(),
+                            diff: Thunk::present((
+                                std::fs::read_link(before).unwrap(),
+                                std::fs::read_link(after).unwrap(),
+                            )),
+                        },
                     },
                 },
             ),
@@ -191,53 +256,128 @@ pub fn dir_diff(before_root: Option<&Path>, after_root: Option<&Path>) -> DirDif
         })
         .collect();
 
-    DirDiffResult { paths: map }
+    DirDiffData { entries: map }
 }
 
-pub fn format_dir_diff(diff: &DirDiffResult) {
-    pub fn format_dir_diff_rec(path_root: &Path, diff: &DirDiffResult) {
-        let mut paths = diff.paths.iter().collect::<Vec<_>>();
-        paths.sort_by_key(|(rel_path, _)| rel_path.to_string_lossy());
+pub fn format_dir_diff(diff: &mut DirDiffEntry) {
+    pub fn format_dir_diff_rec(path: &Path, diff: &mut DirDiffEntry) {
+        match diff {
+            DirDiffEntry::File { status } => match status {
+                DiffStatus::OnlyInA { path: before, .. } => {
+                    println!("{}", format!("- {}: Removed", path.display()).red())
+                }
+                DiffStatus::OnlyInB { path: after, .. } => {
+                    println!("{}", format!("+ {}: Created", path.display()).green())
+                }
+                DiffStatus::InBoth {
+                    before,
+                    after,
+                    diff,
+                } => {
+                    let (before_time, after_time) = diff.get();
+                    if before_time != after_time {
+                        println!("M {}: Modified {:?} {:?}", path.display(), before, after);
+                    }
+                }
+            },
+            DirDiffEntry::Dir { result: status } => match status {
+                DiffStatus::OnlyInA { .. } => {
+                    println!("{}", format!("- {}/: Removed", path.display()).red())
+                }
+                DiffStatus::OnlyInB {
+                    path: created_path, ..
+                } => {
+                    let is_empty = fs::read_dir(created_path).unwrap().next().is_none();
+                    if is_empty {
+                        println!("{}", format!("+ {}/: Created", path.display()).white())
+                    } else {
+                        println!("{}", format!("+ {}/...: Created", path.display()).green())
+                    }
+                }
+                DiffStatus::InBoth { diff, .. } => {
+                    let mut paths = diff.get_mut().entries.iter_mut().collect::<Vec<_>>();
+                    paths.sort_by_key(|(rel_path, _)| rel_path.to_string_lossy());
 
-        for (rel_path, entry) in paths {
-            let path = path_root.join(rel_path);
-            match entry {
-                DirDiffEntry::File { status } => match status {
-                    DiffStatus::OnlyInA => {
-                        println!("{}", format!("- {}: Removed", path.display()).red())
+                    for (rel_path, entry) in paths {
+                        let child_path = path.join(rel_path);
+                        format_dir_diff_rec(&child_path, entry);
                     }
-                    DiffStatus::OnlyInB => {
-                        println!("{}", format!("+ {}: Created", path.display()).green())
+                }
+            },
+            DirDiffEntry::Skipped => println!(
+                "{}",
+                format!("x {}: Skipped", path.display()).bright_black()
+            ),
+            DirDiffEntry::Symlink { target } => match target {
+                DiffStatus::OnlyInA { .. } => {
+                    println!("{}", format!("- {}: Removed", path.display()).red());
+                }
+                DiffStatus::OnlyInB { content, .. } => {
+                    if let Ok(after_nixpath) = path.strip_prefix("/nix/store")
+                        && let Some((after_generation, after_subpath)) =
+                            after_nixpath.display().to_string().split_once("-")
+                    {
+                        println!(
+                            "{}",
+                            format!(
+                                "+ {}: Added NixPath to {}",
+                                path.display(),
+                                content.get().display()
+                            )
+                            .bright_black()
+                        );
+                    } else {
+                        println!(
+                            "{}",
+                            format!(
+                                "+ {}: Added Symlink to {}",
+                                path.display(),
+                                content.get().display()
+                            )
+                            .green()
+                        );
                     }
-                    DiffStatus::InBoth {
-                        diff: (before, after),
-                    } => {
-                        if before != after {
-                            println!("M {}: Modified {:?} {:?}", path.display(), before, after);
+                }
+                DiffStatus::InBoth { diff, .. } => {
+                    let (before, after) = diff.get();
+                    if before == after {
+                        return;
+                    }
+
+                    if let Ok(before_nixpath) = before.strip_prefix("/nix/store")
+                        && let Ok(after_nixpath) = after.strip_prefix("/nix/store")
+                        && let Some((before_generation, before_subpath)) =
+                            before_nixpath.display().to_string().split_once("-")
+                        && let Some((after_generation, after_subpath)) =
+                            after_nixpath.display().to_string().split_once("-")
+                    {
+                        // Nixos Symlink
+                        if before_subpath == after_subpath {
+                            // Only changed generation
+                            println!(
+                                "{}",
+                                format!(
+                                    "M {}: Changed Nix Generation {} to {}",
+                                    path.display(),
+                                    before_generation,
+                                    after_generation
+                                )
+                                .bright_black()
+                            );
+                        } else {
+                            println!(
+                                "{}",
+                                format!(
+                                    "M {}: Changed Nix Symlink {} to {}",
+                                    path.display(),
+                                    before_nixpath.display(),
+                                    after_nixpath.display()
+                                )
+                                .white()
+                            );
                         }
-                    }
-                },
-                DirDiffEntry::Dir { result: status } => match status {
-                    DiffStatus::OnlyInA => {
-                        println!("{}", format!("- {}/: Removed", path.display()).red())
-                    }
-                    DiffStatus::OnlyInB => {
-                        println!("{}", format!("+ {}/: Created", path.display()).green())
-                    }
-                    DiffStatus::InBoth { diff } => format_dir_diff_rec(&path, diff),
-                },
-                DirDiffEntry::Skipped => println!("x {}: Skipped", path.display()),
-                DirDiffEntry::Symlink { target } => match target {
-                    LeftRightBoth::Left(before) => {
-                        println!("{}", format!("- {}: Removed", before.display()).red());
-                    }
-                    LeftRightBoth::Right(after) => {
-                        println!("{}", format!("+ {}: Added", after.display()).green());
-                    }
-                    LeftRightBoth::Both(before, after) => {
-                        if before == after {
-                            continue;
-                        }
+                    } else {
+                        // Non-Nixos Symlink
 
                         println!(
                             "M {}: Modified Before: {} After: {}",
@@ -246,8 +386,8 @@ pub fn format_dir_diff(diff: &DirDiffResult) {
                             after.display()
                         );
                     }
-                },
-            }
+                }
+            },
         }
     }
 
