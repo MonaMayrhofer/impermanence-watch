@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use ratatui::{
     prelude::{Buffer, Rect},
     style::{Style, Stylize as _},
@@ -52,7 +54,7 @@ impl<'a, TLocation> NavList<'a, TLocation> {
 
 impl<'a, TLocation> StatefulWidget for NavList<'a, TLocation>
 where
-    TLocation: PartialEq,
+    TLocation: PartialEq + Debug,
 {
     type State = NavListState<TLocation>;
 
@@ -66,6 +68,12 @@ where
                 .iter()
                 .position(|item| item.sub_location.as_ref() == Some(it))
         });
+
+        tracing::info!(
+            "Finding Selected idx: {:?} {:?}",
+            selected_idx,
+            state.selected
+        );
 
         let list = List::new(items.into_iter().map(|it| it.text))
             .block(Block::bordered().title("List"))

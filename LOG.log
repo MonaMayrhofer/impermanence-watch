@@ -1,135 +1,612 @@
-2025-11-04T21:24:01.062374Z  INFO src/tui.rs:55: Starting Tui
-2025-11-04T21:24:01.062799Z  INFO src/tui.rs:58: Starting App
-2025-11-04T21:24:01.063828Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.063873Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.063929Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064012Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064081Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064114Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064189Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064223Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064280Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064335Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064370Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064402Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064435Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064555Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064589Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064626Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064665Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064703Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064745Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064784Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064822Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.064862Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697784Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697852Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697868Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697883Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697897Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697907Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697924Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697935Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697950Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697963Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697988Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.697999Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698010Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698033Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698044Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698055Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698065Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698076Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698087Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698098Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698109Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:01.698120Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221808Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221877Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221891Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221903Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221914Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221923Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221935Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221944Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221956Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221966Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.221992Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222001Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222044Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222060Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222069Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222077Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222085Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222093Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222103Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222111Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222120Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.222128Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412226Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412287Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412303Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412318Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412332Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412342Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412358Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412369Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412384Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412420Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412431Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412442Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412453Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412475Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412485Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412496Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412507Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412518Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412530Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412541Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412551Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.412562Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739152Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739223Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739236Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739247Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739258Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739267Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739280Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739289Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739301Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739311Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739319Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739328Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739336Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739357Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739365Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739373Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739381Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739390Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739400Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739409Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739417Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:02.739426Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059613Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059670Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059683Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059695Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059706Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059714Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059727Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059736Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059747Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059757Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059766Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059774Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059782Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059798Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059806Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059814Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059822Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059830Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059839Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059848Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059856Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.059864Z DEBUG src/tui.rs:157: []
-2025-11-04T21:24:06.452894Z  INFO src/tui.rs:62: Shutting down
+2025-11-04T21:32:17.120580Z  INFO src/tui.rs:55: Starting Tui
+2025-11-04T21:32:17.120949Z  INFO src/tui.rs:58: Starting App
+2025-11-04T21:32:17.122905Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:17.146134Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:17.694270Z  INFO src/tui.rs:361: Selected to "" -> Some(".Xresources")
+2025-11-04T21:32:17.714631Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some(".Xresources")
+2025-11-04T21:32:17.830915Z  INFO src/tui.rs:361: Selected to "" -> Some(".cache")
+2025-11-04T21:32:17.851204Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some(".cache")
+2025-11-04T21:32:17.853455Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:17.977845Z  INFO src/tui.rs:361: Selected to "" -> Some(".cargo")
+2025-11-04T21:32:17.998061Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some(".cargo")
+2025-11-04T21:32:18.072780Z  INFO src/tui.rs:361: Selected to "" -> Some(".config")
+2025-11-04T21:32:18.092929Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:18.094333Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:18.239678Z  INFO src/tui.rs:361: Selected to "" -> Some(".factorio")
+2025-11-04T21:32:18.259983Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some(".factorio")
+2025-11-04T21:32:18.740226Z  INFO src/tui.rs:369: Selected to "" -> Some(".config")
+2025-11-04T21:32:18.760897Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:18.761666Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:18.957048Z  INFO src/tui.rs:375: Navigated to ".config"
+2025-11-04T21:32:18.977333Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:18.978239Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:19.307593Z  INFO src/tui.rs:361: Selected to ".config" -> Some("Element")
+2025-11-04T21:32:19.327876Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("Element")
+2025-11-04T21:32:19.328907Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:19.490892Z  INFO src/tui.rs:361: Selected to ".config" -> Some("Signal")
+2025-11-04T21:32:19.511175Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some("Signal")
+2025-11-04T21:32:19.511989Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:19.684154Z  INFO src/tui.rs:361: Selected to ".config" -> Some("atuin")
+2025-11-04T21:32:19.704466Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:19.705212Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:19.705400Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:19.851526Z  INFO src/tui.rs:361: Selected to ".config" -> Some("autostart")
+2025-11-04T21:32:19.871874Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:32:19.872912Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:20.012714Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dconf")
+2025-11-04T21:32:20.032998Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:32:20.033850Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:20.034100Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:20.676859Z  INFO src/tui.rs:361: Selected to ".config" -> Some("direnv")
+2025-11-04T21:32:20.697139Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:20.697994Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:20.698189Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:22.034868Z  INFO src/tui.rs:375: Navigated to ".config/direnv"
+2025-11-04T21:32:22.055109Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:22.055551Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:22.413920Z  INFO src/tui.rs:361: Selected to ".config/direnv" -> Some("lib")
+2025-11-04T21:32:22.434133Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:22.434433Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:22.434594Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:23.294323Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:23.314549Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:23.315018Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:23.315186Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:23.733350Z  INFO src/tui.rs:369: Selected to ".config" -> Some("dconf")
+2025-11-04T21:32:23.753992Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:32:23.754599Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:23.754770Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:24.221358Z  INFO src/tui.rs:369: Selected to ".config" -> Some("autostart")
+2025-11-04T21:32:24.241661Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:32:24.242337Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:24.662074Z  INFO src/tui.rs:369: Selected to ".config" -> Some("atuin")
+2025-11-04T21:32:24.682315Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:24.682781Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:24.682947Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:26.304798Z  INFO src/tui.rs:375: Navigated to ".config/atuin"
+2025-11-04T21:32:26.325090Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:26.325525Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:26.824093Z  INFO src/tui.rs:361: Selected to ".config/atuin" -> Some("config.toml")
+2025-11-04T21:32:26.844301Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:32:26.844747Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:27.756298Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:27.776624Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:27.777661Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:32:27.778046Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:28.251925Z  INFO src/tui.rs:361: Selected to ".config" -> Some("autostart")
+2025-11-04T21:32:28.272216Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:32:28.273055Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:28.486424Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dconf")
+2025-11-04T21:32:28.506689Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:32:28.507418Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:28.507612Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:28.693316Z  INFO src/tui.rs:361: Selected to ".config" -> Some("direnv")
+2025-11-04T21:32:28.713601Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:28.714404Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:28.714811Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:28.899224Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dunst")
+2025-11-04T21:32:28.919505Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:32:28.920345Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:28.920563Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:29.123359Z  INFO src/tui.rs:361: Selected to ".config" -> Some("environment.d")
+2025-11-04T21:32:29.143631Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:29.144437Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:29.144635Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:29.823032Z  INFO src/tui.rs:375: Navigated to ".config/environment.d"
+2025-11-04T21:32:29.843237Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:29.843722Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:30.249907Z  INFO src/tui.rs:361: Selected to ".config/environment.d" -> Some("10-home-manager.conf")
+2025-11-04T21:32:30.270137Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:30.270620Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:31.138780Z  INFO src/tui.rs:369: Selected to ".config/environment.d" -> Some("10-home-manager.conf")
+2025-11-04T21:32:31.159127Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:31.159623Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:31.545797Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:31.566054Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:31.566533Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:31.566704Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:32.560158Z  INFO src/tui.rs:375: Navigated to ".config/environment.d"
+2025-11-04T21:32:32.580355Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:32.580715Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:32.955931Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:32.976212Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:32.976928Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:32.977197Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:33.439814Z  INFO src/tui.rs:384: Navigated to ""
+2025-11-04T21:32:33.460178Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:33.460929Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:34.065864Z  INFO src/tui.rs:361: Selected to "" -> Some(".factorio")
+2025-11-04T21:32:34.086211Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some(".factorio")
+2025-11-04T21:32:34.253007Z  INFO src/tui.rs:361: Selected to "" -> Some(".gnupg")
+2025-11-04T21:32:34.273343Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some(".gnupg")
+2025-11-04T21:32:34.423560Z  INFO src/tui.rs:361: Selected to "" -> Some(".gtkrc-2.0")
+2025-11-04T21:32:34.443815Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some(".gtkrc-2.0")
+2025-11-04T21:32:35.763126Z  INFO src/tui.rs:369: Selected to "" -> Some(".gnupg")
+2025-11-04T21:32:35.783494Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some(".gnupg")
+2025-11-04T21:32:35.875177Z  INFO src/tui.rs:369: Selected to "" -> Some(".factorio")
+2025-11-04T21:32:35.895488Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some(".factorio")
+2025-11-04T21:32:35.991230Z  INFO src/tui.rs:369: Selected to "" -> Some(".config")
+2025-11-04T21:32:36.011573Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:36.012615Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:36.114172Z  INFO src/tui.rs:369: Selected to "" -> Some(".cargo")
+2025-11-04T21:32:36.134393Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some(".cargo")
+2025-11-04T21:32:36.408830Z  INFO src/tui.rs:375: Navigated to ".cargo"
+2025-11-04T21:32:36.429225Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some(".cargo")
+2025-11-04T21:32:37.022019Z  INFO src/tui.rs:384: Navigated to ""
+2025-11-04T21:32:37.042658Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some(".cargo")
+2025-11-04T21:32:37.662065Z  INFO src/tui.rs:361: Selected to "" -> Some(".config")
+2025-11-04T21:32:37.682334Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:37.683254Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:37.995061Z  INFO src/tui.rs:375: Navigated to ".config"
+2025-11-04T21:32:38.015359Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:38.015940Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:38.016117Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:38.930071Z  INFO src/tui.rs:369: Selected to ".config" -> Some("dunst")
+2025-11-04T21:32:38.950568Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:32:38.951192Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:38.951357Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:39.048490Z  INFO src/tui.rs:369: Selected to ".config" -> Some("direnv")
+2025-11-04T21:32:39.068739Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:39.069308Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:39.069488Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:39.162565Z  INFO src/tui.rs:369: Selected to ".config" -> Some("dconf")
+2025-11-04T21:32:39.182787Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:32:39.183283Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:39.183472Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:39.281399Z  INFO src/tui.rs:369: Selected to ".config" -> Some("autostart")
+2025-11-04T21:32:39.301676Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:32:39.302502Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:39.403853Z  INFO src/tui.rs:369: Selected to ".config" -> Some("atuin")
+2025-11-04T21:32:39.424065Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:39.424525Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:32:39.424690Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:39.518617Z  INFO src/tui.rs:369: Selected to ".config" -> Some("Signal")
+2025-11-04T21:32:39.538890Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some("Signal")
+2025-11-04T21:32:39.539716Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:39.653774Z  INFO src/tui.rs:369: Selected to ".config" -> Some("Element")
+2025-11-04T21:32:39.674092Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("Element")
+2025-11-04T21:32:39.674817Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:40.807847Z  INFO src/tui.rs:361: Selected to ".config" -> Some("Signal")
+2025-11-04T21:32:40.828223Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some("Signal")
+2025-11-04T21:32:40.828930Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:41.893853Z  INFO src/tui.rs:361: Selected to ".config" -> Some("atuin")
+2025-11-04T21:32:41.914094Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:32:41.914573Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:32:41.914763Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:42.954065Z  INFO src/tui.rs:361: Selected to ".config" -> Some("autostart")
+2025-11-04T21:32:42.974407Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:32:42.975157Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:44.463797Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dconf")
+2025-11-04T21:32:44.484094Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:32:44.484842Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:44.485064Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:46.405864Z  INFO src/tui.rs:361: Selected to ".config" -> Some("direnv")
+2025-11-04T21:32:46.426112Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:46.426613Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:46.426805Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:46.730648Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dunst")
+2025-11-04T21:32:46.750929Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:32:46.751830Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:46.752004Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:47.075703Z  INFO src/tui.rs:361: Selected to ".config" -> Some("environment.d")
+2025-11-04T21:32:47.095988Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:47.096712Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:47.096974Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:47.602005Z  INFO src/tui.rs:369: Selected to ".config" -> Some("dunst")
+2025-11-04T21:32:47.622383Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:32:47.623136Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:47.623300Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:47.748666Z  INFO src/tui.rs:369: Selected to ".config" -> Some("direnv")
+2025-11-04T21:32:47.768930Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:47.769673Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:47.769948Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:48.521816Z  INFO src/tui.rs:375: Navigated to ".config/direnv"
+2025-11-04T21:32:48.542151Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:48.542570Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:48.542811Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:49.507770Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:49.528151Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:32:49.529083Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:32:49.529285Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:50.366936Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dunst")
+2025-11-04T21:32:50.387289Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:32:50.388129Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:50.388319Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:50.538210Z  INFO src/tui.rs:361: Selected to ".config" -> Some("environment.d")
+2025-11-04T21:32:50.558499Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:32:50.559374Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:32:50.559740Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:50.715072Z  INFO src/tui.rs:361: Selected to ".config" -> Some("fontconfig")
+2025-11-04T21:32:50.735359Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:32:50.736205Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:50.736398Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:50.899847Z  INFO src/tui.rs:361: Selected to ".config" -> Some("gtk-3.0")
+2025-11-04T21:32:50.920179Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:32:50.921056Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:50.921295Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:51.406768Z  INFO src/tui.rs:361: Selected to ".config" -> Some("gtk-4.0")
+2025-11-04T21:32:51.427056Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:51.428001Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:51.428173Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:52.051409Z  INFO src/tui.rs:375: Navigated to ".config/gtk-4.0"
+2025-11-04T21:32:52.071636Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:52.072101Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:52.472726Z  INFO src/tui.rs:361: Selected to ".config/gtk-4.0" -> Some("gtk.css")
+2025-11-04T21:32:52.492899Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:32:52.493326Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:52.891825Z  INFO src/tui.rs:361: Selected to ".config/gtk-4.0" -> Some("settings.ini")
+2025-11-04T21:32:52.912079Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some("settings.ini")
+2025-11-04T21:32:52.912544Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:53.395088Z  INFO src/tui.rs:369: Selected to ".config/gtk-4.0" -> Some("gtk.css")
+2025-11-04T21:32:53.415383Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:32:53.416006Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:53.588688Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:53.608941Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:53.609430Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:32:53.609604Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:54.404737Z  INFO src/tui.rs:384: Navigated to ""
+2025-11-04T21:32:54.425073Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:54.425734Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:55.697781Z  INFO src/tui.rs:369: Selected to "" -> Some(".cargo")
+2025-11-04T21:32:55.718217Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some(".cargo")
+2025-11-04T21:32:56.115758Z  INFO src/tui.rs:361: Selected to "" -> Some(".config")
+2025-11-04T21:32:56.136073Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:56.137062Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:56.422790Z  INFO src/tui.rs:375: Navigated to ".config"
+2025-11-04T21:32:56.443123Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:56.443683Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:32:56.443857Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:56.992370Z  INFO src/tui.rs:361: Selected to ".config" -> Some("hypr")
+2025-11-04T21:32:57.012660Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(11) Some("hypr")
+2025-11-04T21:32:57.013565Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:57.013931Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:57.239076Z  INFO src/tui.rs:361: Selected to ".config" -> Some("jj")
+2025-11-04T21:32:57.259692Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(12) Some("jj")
+2025-11-04T21:32:57.260511Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:57.814001Z  INFO src/tui.rs:369: Selected to ".config" -> Some("hypr")
+2025-11-04T21:32:57.834377Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(11) Some("hypr")
+2025-11-04T21:32:57.835205Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:57.835477Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:58.295772Z  INFO src/tui.rs:375: Navigated to ".config/hypr"
+2025-11-04T21:32:58.315996Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:58.316494Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(11) Some("hypr")
+2025-11-04T21:32:59.041769Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:32:59.062077Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(11) Some("hypr")
+2025-11-04T21:32:59.062695Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:32:59.062863Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:59.357782Z  INFO src/tui.rs:369: Selected to ".config" -> Some("gtk-4.0")
+2025-11-04T21:32:59.378080Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:32:59.378684Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:32:59.378858Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:32:59.483304Z  INFO src/tui.rs:375: Navigated to ".config/gtk-4.0"
+2025-11-04T21:32:59.503488Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:32:59.503806Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:00.764249Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:00.784544Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:00.785339Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:33:00.785672Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:01.211783Z  INFO src/tui.rs:369: Selected to ".config" -> Some("gtk-3.0")
+2025-11-04T21:33:01.232119Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:01.232739Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:01.232908Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:01.481784Z  INFO src/tui.rs:375: Navigated to ".config/gtk-3.0"
+2025-11-04T21:33:01.502092Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:01.502573Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:01.877211Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:01.897498Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:01.898221Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:01.898478Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:02.193180Z  INFO src/tui.rs:369: Selected to ".config" -> Some("fontconfig")
+2025-11-04T21:33:02.213513Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:02.214346Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:02.214622Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:02.367605Z  INFO src/tui.rs:375: Navigated to ".config/fontconfig"
+2025-11-04T21:33:02.387821Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:02.388328Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:02.810736Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:02.831091Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:02.831743Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:02.831911Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:03.205513Z  INFO src/tui.rs:361: Selected to ".config" -> Some("gtk-3.0")
+2025-11-04T21:33:03.225801Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:03.226593Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:03.226789Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:03.547752Z  INFO src/tui.rs:375: Navigated to ".config/gtk-3.0"
+2025-11-04T21:33:03.568042Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:03.568504Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:04.145760Z  INFO src/tui.rs:361: Selected to ".config/gtk-3.0" -> Some("settings.ini")
+2025-11-04T21:33:04.165991Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("settings.ini")
+2025-11-04T21:33:04.166537Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:04.737921Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:04.758254Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:04.758858Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("settings.ini")
+2025-11-04T21:33:04.759032Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:05.312732Z  INFO src/tui.rs:361: Selected to ".config" -> Some("gtk-4.0")
+2025-11-04T21:33:05.333021Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:05.333724Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:33:05.333896Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:05.595963Z  INFO src/tui.rs:375: Navigated to ".config/gtk-4.0"
+2025-11-04T21:33:05.616198Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:33:05.616657Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:06.413092Z  INFO src/tui.rs:361: Selected to ".config/gtk-4.0" -> Some("settings.ini")
+2025-11-04T21:33:06.433316Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some("settings.ini")
+2025-11-04T21:33:06.433771Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:06.730550Z  INFO src/tui.rs:369: Selected to ".config/gtk-4.0" -> Some("gtk.css")
+2025-11-04T21:33:06.750782Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:33:06.751271Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:06.980513Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:07.000823Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:07.001564Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:33:07.001814Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:07.315748Z  INFO src/tui.rs:369: Selected to ".config" -> Some("gtk-3.0")
+2025-11-04T21:33:07.336076Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:07.336812Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("settings.ini")
+2025-11-04T21:33:07.336986Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:07.494395Z  INFO src/tui.rs:369: Selected to ".config" -> Some("fontconfig")
+2025-11-04T21:33:07.514684Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:07.515418Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:07.515675Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:07.831212Z  INFO src/tui.rs:375: Navigated to ".config/fontconfig"
+2025-11-04T21:33:07.851433Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:07.851870Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:09.058245Z  INFO src/tui.rs:361: Selected to ".config/fontconfig" -> Some("conf.d")
+2025-11-04T21:33:09.078536Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("conf.d")
+2025-11-04T21:33:09.079177Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:09.079499Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:09.400804Z  INFO src/tui.rs:375: Navigated to ".config/fontconfig/conf.d"
+2025-11-04T21:33:09.421084Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:09.421581Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("conf.d")
+2025-11-04T21:33:10.320746Z  INFO src/tui.rs:384: Navigated to ".config/fontconfig"
+2025-11-04T21:33:10.340959Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("conf.d")
+2025-11-04T21:33:10.341359Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:10.341613Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:10.650339Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:10.670607Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:10.671344Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("conf.d")
+2025-11-04T21:33:10.671604Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:11.158684Z  INFO src/tui.rs:369: Selected to ".config" -> Some("environment.d")
+2025-11-04T21:33:11.179059Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:33:11.179801Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:33:11.180025Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:11.427594Z  INFO src/tui.rs:375: Navigated to ".config/environment.d"
+2025-11-04T21:33:11.447799Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:33:11.448370Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:33:12.043672Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:12.063966Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:33:12.064848Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:33:12.065023Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:12.353927Z  INFO src/tui.rs:369: Selected to ".config" -> Some("dunst")
+2025-11-04T21:33:12.374622Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:33:12.375250Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:12.375417Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:12.568437Z  INFO src/tui.rs:375: Navigated to ".config/dunst"
+2025-11-04T21:33:12.588656Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:12.589204Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:33:12.987812Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:13.008130Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:33:13.008885Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:13.009052Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:13.340518Z  INFO src/tui.rs:369: Selected to ".config" -> Some("direnv")
+2025-11-04T21:33:13.360840Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:33:13.361760Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:33:13.361931Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:13.411595Z  INFO src/tui.rs:375: Navigated to ".config/direnv"
+2025-11-04T21:33:13.431815Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:33:13.432220Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:13.432462Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:33:13.840733Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:13.861058Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:33:13.861869Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:33:13.862046Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:14.229849Z  INFO src/tui.rs:369: Selected to ".config" -> Some("dconf")
+2025-11-04T21:33:14.250144Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:33:14.250864Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:14.251109Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:14.453409Z  INFO src/tui.rs:369: Selected to ".config" -> Some("autostart")
+2025-11-04T21:33:14.473763Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:33:14.474338Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:14.631773Z  INFO src/tui.rs:369: Selected to ".config" -> Some("atuin")
+2025-11-04T21:33:14.652034Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:33:14.652509Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:33:14.652676Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:14.837778Z  INFO src/tui.rs:369: Selected to ".config" -> Some("Signal")
+2025-11-04T21:33:14.858120Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(1) Some("Signal")
+2025-11-04T21:33:14.858926Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:15.175923Z  INFO src/tui.rs:361: Selected to ".config" -> Some("atuin")
+2025-11-04T21:33:15.196239Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:33:15.197012Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:33:15.197204Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:15.655101Z  INFO src/tui.rs:375: Navigated to ".config/atuin"
+2025-11-04T21:33:15.675302Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:33:15.675604Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:33:16.145791Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:16.166071Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(2) Some("atuin")
+2025-11-04T21:33:16.166800Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("config.toml")
+2025-11-04T21:33:16.167068Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:16.399712Z  INFO src/tui.rs:361: Selected to ".config" -> Some("autostart")
+2025-11-04T21:33:16.420060Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some("autostart")
+2025-11-04T21:33:16.421029Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:16.513314Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dconf")
+2025-11-04T21:33:16.533530Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(4) Some("dconf")
+2025-11-04T21:33:16.534300Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:16.534533Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.110599Z  INFO src/tui.rs:361: Selected to ".config" -> Some("direnv")
+2025-11-04T21:33:17.130899Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(5) Some("direnv")
+2025-11-04T21:33:17.131805Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("lib")
+2025-11-04T21:33:17.132075Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.154665Z  INFO src/tui.rs:361: Selected to ".config" -> Some("dunst")
+2025-11-04T21:33:17.174844Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(6) Some("dunst")
+2025-11-04T21:33:17.175551Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:17.175802Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.194742Z  INFO src/tui.rs:361: Selected to ".config" -> Some("environment.d")
+2025-11-04T21:33:17.214910Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(7) Some("environment.d")
+2025-11-04T21:33:17.215797Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("10-home-manager.conf")
+2025-11-04T21:33:17.216107Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.242310Z  INFO src/tui.rs:361: Selected to ".config" -> Some("fontconfig")
+2025-11-04T21:33:17.262501Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(8) Some("fontconfig")
+2025-11-04T21:33:17.263442Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("conf.d")
+2025-11-04T21:33:17.263796Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.284951Z  INFO src/tui.rs:361: Selected to ".config" -> Some("gtk-3.0")
+2025-11-04T21:33:17.305149Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(9) Some("gtk-3.0")
+2025-11-04T21:33:17.305841Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("settings.ini")
+2025-11-04T21:33:17.306102Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.327342Z  INFO src/tui.rs:361: Selected to ".config" -> Some("gtk-4.0")
+2025-11-04T21:33:17.347596Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(10) Some("gtk-4.0")
+2025-11-04T21:33:17.348472Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("gtk.css")
+2025-11-04T21:33:17.348854Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.372069Z  INFO src/tui.rs:361: Selected to ".config" -> Some("hypr")
+2025-11-04T21:33:17.392336Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(11) Some("hypr")
+2025-11-04T21:33:17.393121Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:17.393315Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.413738Z  INFO src/tui.rs:361: Selected to ".config" -> Some("jj")
+2025-11-04T21:33:17.433897Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(12) Some("jj")
+2025-11-04T21:33:17.434414Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.456934Z  INFO src/tui.rs:361: Selected to ".config" -> Some("kitty")
+2025-11-04T21:33:17.477111Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(13) Some("kitty")
+2025-11-04T21:33:17.477625Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:17.477793Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.498680Z  INFO src/tui.rs:361: Selected to ".config" -> Some("mimeapps.list")
+2025-11-04T21:33:17.518847Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(14) Some("mimeapps.list")
+2025-11-04T21:33:17.519352Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.540683Z  INFO src/tui.rs:361: Selected to ".config" -> Some("niri")
+2025-11-04T21:33:17.560833Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(15) Some("niri")
+2025-11-04T21:33:17.561694Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:17.562055Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:17.839550Z  INFO src/tui.rs:375: Navigated to ".config/niri"
+2025-11-04T21:33:17.859774Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:17.860232Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(15) Some("niri")
+2025-11-04T21:33:18.460744Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:18.481026Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(15) Some("niri")
+2025-11-04T21:33:18.481507Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:18.481675Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:18.923717Z  INFO src/tui.rs:361: Selected to ".config" -> Some("pulse")
+2025-11-04T21:33:18.944029Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(16) Some("pulse")
+2025-11-04T21:33:18.945035Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:19.106767Z  INFO src/tui.rs:361: Selected to ".config" -> Some("rofi")
+2025-11-04T21:33:19.127061Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(17) Some("rofi")
+2025-11-04T21:33:19.127835Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:19.128101Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:19.283418Z  INFO src/tui.rs:361: Selected to ".config" -> Some("starship.toml")
+2025-11-04T21:33:19.303787Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(18) Some("starship.toml")
+2025-11-04T21:33:19.304429Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:19.507225Z  INFO src/tui.rs:361: Selected to ".config" -> Some("systemd")
+2025-11-04T21:33:19.527493Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:19.528435Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:19.528794Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:19.647651Z  INFO src/tui.rs:375: Navigated to ".config/systemd"
+2025-11-04T21:33:19.667872Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:19.668430Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:20.163696Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:20.183951Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:20.184437Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:20.184605Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:20.818125Z  INFO src/tui.rs:375: Navigated to ".config/systemd"
+2025-11-04T21:33:20.838412Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:20.839008Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:21.042366Z  INFO src/tui.rs:361: Selected to ".config/systemd" -> Some("user")
+2025-11-04T21:33:21.062580Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:21.063260Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:21.063663Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:21.359223Z  INFO src/tui.rs:375: Navigated to ".config/systemd/user"
+2025-11-04T21:33:21.379455Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:21.379892Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:22.330648Z  INFO src/tui.rs:361: Selected to ".config/systemd/user" -> Some("graphical-session.target.wants")
+2025-11-04T21:33:22.351199Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("graphical-session.target.wants")
+2025-11-04T21:33:22.351727Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:22.351852Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:22.553820Z  INFO src/tui.rs:375: Navigated to ".config/systemd/user/graphical-session.target.wants"
+2025-11-04T21:33:22.574035Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:22.574426Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("graphical-session.target.wants")
+2025-11-04T21:33:23.277809Z  INFO src/tui.rs:384: Navigated to ".config/systemd/user"
+2025-11-04T21:33:23.298055Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("graphical-session.target.wants")
+2025-11-04T21:33:23.298500Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:23.298749Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:23.488564Z  INFO src/tui.rs:384: Navigated to ".config/systemd"
+2025-11-04T21:33:23.508789Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:23.509267Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("graphical-session.target.wants")
+2025-11-04T21:33:23.509457Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:23.873158Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:23.893413Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:23.893886Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:23.894062Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:24.494653Z  INFO src/tui.rs:361: Selected to ".config" -> Some("udiskie")
+2025-11-04T21:33:24.514958Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(20) Some("udiskie")
+2025-11-04T21:33:24.515566Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:24.515733Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:24.667319Z  INFO src/tui.rs:375: Navigated to ".config/udiskie"
+2025-11-04T21:33:24.687538Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:24.688007Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(20) Some("udiskie")
+2025-11-04T21:33:25.362418Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:25.382749Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(20) Some("udiskie")
+2025-11-04T21:33:25.383490Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:25.383656Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:25.987865Z  INFO src/tui.rs:361: Selected to ".config" -> Some("xdg-desktop-portal")
+2025-11-04T21:33:26.008222Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(21) Some("xdg-desktop-portal")
+2025-11-04T21:33:26.009347Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:26.009539Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:26.163100Z  INFO src/tui.rs:375: Navigated to ".config/xdg-desktop-portal"
+2025-11-04T21:33:26.183317Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:26.183771Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(21) Some("xdg-desktop-portal")
+2025-11-04T21:33:30.441670Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:30.461959Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(21) Some("xdg-desktop-portal")
+2025-11-04T21:33:30.462694Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:30.462881Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:31.478655Z  INFO src/tui.rs:361: Selected to ".config" -> Some("yazi")
+2025-11-04T21:33:31.498895Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(22) Some("yazi")
+2025-11-04T21:33:31.499470Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:31.499657Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:31.812858Z  INFO src/tui.rs:375: Navigated to ".config/yazi"
+2025-11-04T21:33:31.833066Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:31.833386Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(22) Some("yazi")
+2025-11-04T21:33:35.028814Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:35.049198Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(22) Some("yazi")
+2025-11-04T21:33:35.049905Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:35.050098Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:36.360852Z  INFO src/tui.rs:361: Selected to ".config" -> Some("zed")
+2025-11-04T21:33:36.381161Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(23) Some("zed")
+2025-11-04T21:33:36.381945Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:36.566609Z  INFO src/tui.rs:375: Navigated to ".config/zed"
+2025-11-04T21:33:36.586899Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(23) Some("zed")
+2025-11-04T21:33:37.327627Z  INFO src/tui.rs:384: Navigated to ".config"
+2025-11-04T21:33:37.347874Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(23) Some("zed")
+2025-11-04T21:33:37.348412Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:39.855635Z  INFO src/tui.rs:384: Navigated to ""
+2025-11-04T21:33:39.876131Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:39.877091Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(23) Some("zed")
+2025-11-04T21:33:49.034615Z  INFO src/tui.rs:375: Navigated to ".config"
+2025-11-04T21:33:49.054935Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(23) Some("zed")
+2025-11-04T21:33:49.055579Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:50.446514Z  INFO src/tui.rs:369: Selected to ".config" -> Some("yazi")
+2025-11-04T21:33:50.466843Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(22) Some("yazi")
+2025-11-04T21:33:50.467639Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:50.467928Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:51.051428Z  INFO src/tui.rs:369: Selected to ".config" -> Some("xdg-desktop-portal")
+2025-11-04T21:33:51.071708Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(21) Some("xdg-desktop-portal")
+2025-11-04T21:33:51.072409Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:51.072581Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:51.093599Z  INFO src/tui.rs:369: Selected to ".config" -> Some("udiskie")
+2025-11-04T21:33:51.113789Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(20) Some("udiskie")
+2025-11-04T21:33:51.114440Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:51.114599Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:51.134910Z  INFO src/tui.rs:369: Selected to ".config" -> Some("systemd")
+2025-11-04T21:33:51.155036Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(19) Some("systemd")
+2025-11-04T21:33:51.155481Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(0) Some("user")
+2025-11-04T21:33:51.155642Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:51.177055Z  INFO src/tui.rs:369: Selected to ".config" -> Some("starship.toml")
+2025-11-04T21:33:51.197318Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(18) Some("starship.toml")
+2025-11-04T21:33:51.198328Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:51.221413Z  INFO src/tui.rs:369: Selected to ".config" -> Some("rofi")
+2025-11-04T21:33:51.241703Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(17) Some("rofi")
+2025-11-04T21:33:51.242464Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:51.242635Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:51.617235Z  INFO src/tui.rs:369: Selected to ".config" -> Some("pulse")
+2025-11-04T21:33:51.637596Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(16) Some("pulse")
+2025-11-04T21:33:51.638455Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:33:52.904545Z  INFO src/tui.rs:361: Selected to ".config" -> Some("rofi")
+2025-11-04T21:33:52.924828Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(17) Some("rofi")
+2025-11-04T21:33:52.925641Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: None None
+2025-11-04T21:33:52.926009Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:34:03.336089Z  INFO src/tui.rs:384: Navigated to ""
+2025-11-04T21:34:03.356421Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(3) Some(".config")
+2025-11-04T21:34:03.357179Z  INFO src/tui/nav_list.rs:72: Finding Selected idx: Some(17) Some("rofi")
+2025-11-04T21:34:04.477651Z  INFO src/tui.rs:62: Shutting down

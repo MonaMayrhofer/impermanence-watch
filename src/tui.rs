@@ -146,7 +146,7 @@ impl NavListAdapter for DiffCache {
                 .into_iter()
                 .flat_map(|(rel_path, _)| {
                     let child_diff = self.get_diff(location.join(&rel_path));
-                    let sub_location = Some(location.join(&rel_path));
+                    let sub_location = Some(rel_path.clone());
 
                     match child_diff {
                         PathDiff::Recreated { before, after } => match (before, after) {
@@ -154,7 +154,6 @@ impl NavListAdapter for DiffCache {
                                 diff_before @ PathElementDiff::Directory(before_dir),
                                 diff_after @ PathElementDiff::FilesystemBoundary,
                             ) => {
-                                tracing::debug!("{:?}", before_dir);
                                 if before_dir.is_empty() {
                                     vec![NavListItem {
                                         text: display_diff(
@@ -319,8 +318,12 @@ impl App {
         frame.render_stateful_widget(navlist, middle, state);
 
         if let Some(selected) = &selected {
-            let state = self.nav_list_states.entry(selected.clone()).or_default();
-            let navlist = NavList::new(&mut self.diff_cache, &selected);
+            let selected_full_path = self.path.join(selected);
+            let state = self
+                .nav_list_states
+                .entry(selected_full_path.clone())
+                .or_default();
+            let navlist = NavList::new(&mut self.diff_cache, &selected_full_path);
             frame.render_stateful_widget(navlist, right, state);
         }
 
@@ -354,17 +357,22 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
                         KeyCode::Down => {
                             state.selected =
                                 app.diff_cache.get_next(&app.path, state.selected.as_ref());
+
+                            tracing::info!("Selected to {:?} -> {:?}", app.path, state.selected);
                             true
                         }
                         KeyCode::Up => {
                             state.selected = app
                                 .diff_cache
                                 .get_previous(&app.path, state.selected.as_ref());
+
+                            tracing::info!("Selected to {:?} -> {:?}", app.path, state.selected);
                             true
                         }
                         KeyCode::Right => {
                             if let Some(selected) = &state.selected {
-                                app.path = selected.clone();
+                                app.path = app.path.join(selected);
+                                tracing::info!("Navigated to {:?}", app.path);
                                 true
                             } else {
                                 false
@@ -373,6 +381,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
                         KeyCode::Left => {
                             if let Some(parent) = app.path.parent() {
                                 app.path = parent.to_path_buf();
+                                tracing::info!("Navigated to {:?}", app.path);
                                 true
                             } else {
                                 false
