@@ -237,17 +237,21 @@ fn render_dir_diff_entry(
                     DiffStatus::OnlyInB { .. } => Text::from(path.display().to_string()).green(),
                     DiffStatus::InBoth { .. } => Text::from(path.display().to_string()).yellow(),
                 },
-                DirDiffEntry::Dir { result } => match result {
-                    DiffStatus::OnlyInA { .. } => Text::from(path.display().to_string()).red(),
-                    DiffStatus::OnlyInB { .. } => Text::from(path.display().to_string()).green(),
-                    DiffStatus::InBoth { diff, .. } => {
-                        if diff.get_mut().has_meaningful_changes() {
-                            Text::from(path.display().to_string()).yellow()
-                        } else {
-                            Text::from(path.display().to_string()).dark_gray()
+                DirDiffEntry::Dir { result } => {
+                    let text = Text::from(format!("{}/", path.display()));
+
+                    match result {
+                        DiffStatus::OnlyInA { .. } => text.red(),
+                        DiffStatus::OnlyInB { .. } => text.green(),
+                        DiffStatus::InBoth { diff, .. } => {
+                            if diff.get_mut().has_meaningful_changes() {
+                                text.yellow()
+                            } else {
+                                text.dark_gray()
+                            }
                         }
                     }
-                },
+                }
                 DirDiffEntry::Skipped => Text::from(path.display().to_string()).dark_gray(),
             }))
             .block(Block::bordered().title("List"))
