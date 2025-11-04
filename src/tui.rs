@@ -4,6 +4,7 @@ use color_eyre::Result;
 use std::{
     collections::HashMap,
     fs::OpenOptions,
+    marker::PhantomData,
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
     time::{Duration, Instant},
@@ -20,11 +21,14 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     prelude::Backend,
     style::{Color, Style, Stylize},
-    text::{Span, Text},
+    text::{Line, Span, Text},
+    widgets::{Block, Paragraph},
 };
 
 use crate::{
-    dir_diff::{self, DiffLayout, DirDiff, LeftRightBoth, PathDiff, PathElementDiff, path_diff},
+    dir_diff::{
+        self, DiffLayout, DirDiff, FileType, LeftRightBoth, PathDiff, PathElementDiff, path_diff,
+    },
     tui::nav_list::{NavList, NavListAdapter, NavListItem, NavListState},
 };
 
@@ -64,6 +68,29 @@ pub fn tui() -> Result<()> {
     res
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SymlinkDiff {
+    Different {
+        before: Option<PathBuf>,
+        after: Option<PathBuf>,
+    },
+    Identical {
+        target: Option<PathBuf>,
+    },
+    IdenticalInNix {
+        target: PathBuf,
+    },
+    DifferentInNix {
+        before: PathBuf,
+        after: PathBuf,
+    },
+    NixGenerationChanged {
+        path_within_derivation: String,
+        before: String,
+        after: String,
+    },
+}
+
 pub struct DiffCacheLayout;
 impl DiffLayout for DiffCacheLayout {
     type DirectoryDiff = Vec<(PathBuf, LeftRightBoth<PathBuf>)>;
@@ -81,6 +108,55 @@ impl DiffLayout for DiffCacheLayout {
             .collect::<Vec<_>>();
         items.sort_by_cached_key(|it| it.0.clone());
         items
+    }
+
+    type SymlinkDiff = SymlinkDiff;
+
+    fn make_symlink_diff(before: Option<&Path>, after: Option<&Path>) -> Self::SymlinkDiff {
+        let before = before.filter(|it| it.symlink_metadata().is_ok() && it.is_symlink());
+        let after = after.filter(|it| it.symlink_metadata().is_ok() && it.is_symlink());
+        let before_target = before.and_then(|it| std::fs::read_link(it).ok());
+        let after_target = after.and_then(|it| std::fs::read_link(it).ok());
+
+        if let Some(before_target) = &before_target
+            && let Ok(before_nix_path) = before_target.strip_prefix("/nix/store")
+            && let Some((before_hash, before_path)) =
+                before_nix_path.display().to_string().split_once("-")
+            && let Some(after_target) = &after_target
+            && let Ok(after_nix_path) = after_target.strip_prefix("/nix/store")
+            && let Some((after_hash, after_path)) =
+                after_nix_path.display().to_string().split_once("-")
+        {
+            if before_path == after_path {
+                if before_hash == after_hash {
+                    return SymlinkDiff::IdenticalInNix {
+                        target: before_target.clone(),
+                    };
+                } else {
+                    return SymlinkDiff::NixGenerationChanged {
+                        path_within_derivation: before_path.to_string(),
+                        before: before_hash.to_owned(),
+                        after: after_hash.to_owned(),
+                    };
+                }
+            } else {
+                return SymlinkDiff::DifferentInNix {
+                    before: PathBuf::from(before_nix_path),
+                    after: PathBuf::from(after_nix_path),
+                };
+            }
+        }
+
+        if before_target == after_target {
+            return SymlinkDiff::Identical {
+                target: before_target,
+            };
+        }
+
+        SymlinkDiff::Different {
+            before: before_target,
+            after: after_target,
+        }
     }
 }
 
@@ -114,20 +190,64 @@ fn display_diff(
     diff: &PathElementDiff<DiffCacheLayout>,
     state: EntryState,
 ) -> Text<'static> {
-    let text = match diff {
-        PathElementDiff::Directory(_) => Text::from(format!(" {}/", path.display())),
-        PathElementDiff::File => Text::from(format!(" {}", path.display())),
-        PathElementDiff::Symlink => Text::from(format!(" {}", path.display())),
-        PathElementDiff::Nonexistent => Text::from(format!(" {}", path.display())),
-        PathElementDiff::Unknown(_) => Text::from(format!("? {}", path.display())),
-        PathElementDiff::FilesystemBoundary => Text::from(format!(" {}/", path.display())),
+    tracing::info!("{:?} {:?}", &path, &diff);
+
+    let entry_style = match state {
+        EntryState::Created => Style::new().green(),
+        EntryState::Deleted => Style::new().red(),
+        EntryState::Modified => Style::new().yellow(),
+        EntryState::Unchanged => Style::new().gray(),
+        EntryState::Unimportant => Style::new().dark_gray(),
     };
-    match state {
-        EntryState::Created => text.green(),
-        EntryState::Deleted => text.red(),
-        EntryState::Modified => text.yellow(),
-        EntryState::Unchanged => text.gray(),
-        EntryState::Unimportant => text.dark_gray(),
+
+    match diff {
+        PathElementDiff::Directory(_) => {
+            Text::from(format!(" {}/", path.display())).style(entry_style)
+        }
+        PathElementDiff::File => Text::from(format!(" {}", path.display())).style(entry_style),
+        PathElementDiff::Symlink(diff) => match diff {
+            SymlinkDiff::Different { before, after } => Text::from(Line::from(vec![
+                Span::from(format!(" {}", path.display())),
+                Span::from(" -> ???"),
+            ]))
+            .yellow(),
+            SymlinkDiff::Identical { target } => Text::from(Line::from(vec![
+                Span::from(format!(" {}", path.display())),
+                Span::from(format!(" -> {}", target.as_ref().unwrap().display())),
+            ]))
+            .dark_gray(),
+            SymlinkDiff::IdenticalInNix { target } => Text::from(Line::from(vec![
+                Span::from(format!(" {}", path.display())),
+                Span::from(format!(" -> Nix: {}", target.display())),
+            ]))
+            .dark_gray(),
+            SymlinkDiff::DifferentInNix { before, after } => Text::from(Line::from(vec![
+                Span::from(format!(" {}", path.display())),
+                Span::from(format!(" -> Nix: ???")),
+            ]))
+            .yellow(),
+            SymlinkDiff::NixGenerationChanged {
+                before,
+                after,
+                path_within_derivation,
+            } => Text::from(Line::from(vec![
+                Span::from(format!(" {}", path.display())),
+                Span::from(" -> /nix/store/"),
+                Span::from("???").yellow(),
+                Span::from("-"),
+                Span::from(path_within_derivation.to_string()),
+            ]))
+            .dark_gray(),
+        },
+        PathElementDiff::Nonexistent => {
+            Text::from(format!(" {}", path.display())).style(entry_style)
+        }
+        PathElementDiff::Unknown(_) => {
+            Text::from(format!("? {}", path.display())).style(entry_style)
+        }
+        PathElementDiff::FilesystemBoundary => {
+            Text::from(format!(" {}/", path.display())).dark_gray()
+        }
     }
 }
 
@@ -306,32 +426,145 @@ impl App {
         let area = frame.area();
 
         let [left, middle, right] = Layout::horizontal(vec![
-            Constraint::Percentage(25),
+            Constraint::Percentage(15),
             Constraint::Percentage(50),
-            Constraint::Percentage(25),
+            Constraint::Percentage(35),
         ])
         .areas(frame.area());
 
-        let navlist = NavList::new(&mut self.diff_cache, &self.path);
+        self.display_path(self.path.to_path_buf(), frame, middle);
+
         let state = self.nav_list_states.entry(self.path.clone()).or_default();
         let selected = state.selected.clone();
-        frame.render_stateful_widget(navlist, middle, state);
 
         if let Some(selected) = &selected {
             let selected_full_path = self.path.join(selected);
-            let state = self
-                .nav_list_states
-                .entry(selected_full_path.clone())
-                .or_default();
-            let navlist = NavList::new(&mut self.diff_cache, &selected_full_path);
-            frame.render_stateful_widget(navlist, right, state);
+            self.display_path(selected_full_path, frame, right);
         }
 
         if let Some(parent) = self.path.parent() {
-            let parent = parent.to_path_buf();
-            let state = self.nav_list_states.entry(parent.clone()).or_default();
-            let navlist = NavList::new(&mut self.diff_cache, &parent);
-            frame.render_stateful_widget(navlist, left, state);
+            self.display_path(parent.to_path_buf(), frame, left);
+        }
+    }
+
+    fn display_path(&mut self, path: PathBuf, frame: &mut Frame, area: Rect) {
+        let diff = self.diff_cache.get_diff(path.clone());
+        match diff.clone() {
+            //TODO This clone shows a fundamental flaw with the current design. Get rid of it
+            PathDiff::Recreated { before, after } => {
+                let [top, bottom] =
+                    Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
+                        .areas(area);
+
+                self.display_element_diff(path.clone(), before, frame, top);
+                self.display_element_diff(path.clone(), after, frame, bottom);
+            }
+            PathDiff::Modified(element) => self.display_element_diff(path, element, frame, area),
+        }
+    }
+
+    fn display_element_diff(
+        &mut self,
+        path: PathBuf,
+        element: PathElementDiff<DiffCacheLayout>,
+        frame: &mut Frame,
+        area: Rect,
+    ) {
+        match element {
+            PathElementDiff::Directory(_) => {
+                let state = self.nav_list_states.entry(path.clone()).or_default();
+                let navlist = NavList::new(&mut self.diff_cache, &path);
+                frame.render_stateful_widget(navlist, area, state);
+            }
+            PathElementDiff::Symlink(link_diff) => {
+                match link_diff {
+                    SymlinkDiff::Different { before, after } => {
+                        let text = Text::from(vec![
+                            Line::from(
+                                before
+                                    .map(|it| it.display().to_string())
+                                    .unwrap_or_else(|| "Nonexistent".to_string()),
+                            ),
+                            Line::from(
+                                after
+                                    .map(|it| it.display().to_string())
+                                    .unwrap_or_else(|| "Nonexistent".to_string()),
+                            ),
+                        ]);
+                        let paragraph =
+                            Paragraph::new(text).block(Block::bordered().title("Symlink Changed"));
+                        frame.render_widget(paragraph, area);
+                    }
+                    SymlinkDiff::Identical { target } => {
+                        let text = Text::from(vec![Line::from(
+                            target
+                                .map(|it| it.display().to_string())
+                                .unwrap_or_else(|| "Nonexistent".to_string()),
+                        )]);
+                        let paragraph = Paragraph::new(text)
+                            .block(Block::bordered().title("Symlink Identical"));
+                        frame.render_widget(paragraph, area);
+                    }
+                    SymlinkDiff::IdenticalInNix { target } => {
+                        let text = Text::from(vec![Line::from(target.display().to_string())]);
+                        let paragraph = Paragraph::new(text)
+                            .block(Block::bordered().title("Symlink Identical"));
+                        frame.render_widget(paragraph, area);
+                    }
+                    SymlinkDiff::DifferentInNix { before, after } => {
+                        let text = Text::from(vec![
+                            Line::from(before.display().to_string()),
+                            Line::from(after.display().to_string()),
+                        ]);
+                        let paragraph =
+                            Paragraph::new(text).block(Block::bordered().title("Symlink Changed"));
+                        frame.render_widget(paragraph, area);
+                    }
+                    SymlinkDiff::NixGenerationChanged {
+                        path_within_derivation,
+                        before,
+                        after,
+                    } => {
+                        let text = Text::from(vec![
+                            Line::from(vec![
+                                Span::from("/nix/store/").dark_gray(),
+                                Span::from(before).red(),
+                                Span::from("-").dark_gray(),
+                                Span::from(path_within_derivation.clone()).dark_gray(),
+                            ]),
+                            Line::from(vec![
+                                Span::from("/nix/store/").dark_gray(),
+                                Span::from(after).green(),
+                                Span::from("-").dark_gray(),
+                                Span::from(path_within_derivation).dark_gray(),
+                            ]),
+                        ]);
+                        let paragraph = Paragraph::new(text)
+                            .block(Block::bordered().title("Nix-Symlink Generation Changed"));
+                        frame.render_widget(paragraph, area);
+                    }
+                };
+            }
+            PathElementDiff::File => {
+                let text = Text::from(vec![Line::from("File")]);
+                let paragraph = Paragraph::new(text).block(Block::bordered().title("File"));
+                frame.render_widget(paragraph, area);
+            }
+            PathElementDiff::Nonexistent => {
+                let text = Text::from(vec![Line::from("Nonexistent")]);
+                let paragraph = Paragraph::new(text).block(Block::bordered().title("Nonexistent"));
+                frame.render_widget(paragraph, area);
+            }
+            PathElementDiff::FilesystemBoundary => {
+                let text = Text::from(vec![Line::from("FS Boundary")]);
+                let paragraph = Paragraph::new(text).block(Block::bordered().title("FS Boundary"));
+                frame.render_widget(paragraph, area);
+            }
+            PathElementDiff::Unknown(_) => {
+                let text = Text::from(vec![Line::from("Unknown")]);
+                let paragraph = Paragraph::new(text).block(Block::bordered().title("Unknown"));
+                frame.render_widget(paragraph, area);
+            }
         }
     }
 }

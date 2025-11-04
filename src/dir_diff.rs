@@ -1,6 +1,7 @@
 use std::{
     alloc::System,
     collections::HashMap,
+    fmt::Debug,
     fs::{self, File},
     ops::Not,
     os::unix::fs::MetadataExt,
@@ -16,8 +17,10 @@ use crate::thunk::Thunk;
 
 pub trait DiffLayout {
     type DirectoryDiff;
+    type SymlinkDiff;
 
     fn make_directory_diff(before: Option<&Path>, after: Option<&Path>) -> Self::DirectoryDiff;
+    fn make_symlink_diff(before: Option<&Path>, after: Option<&Path>) -> Self::SymlinkDiff;
 }
 
 pub struct DirDiff {
@@ -27,11 +30,48 @@ pub struct DirDiff {
 pub enum PathElementDiff<TLayout: DiffLayout> {
     Directory(TLayout::DirectoryDiff),
     File,
-    Symlink,
+    Symlink(TLayout::SymlinkDiff),
     Nonexistent,
     FilesystemBoundary,
     Unknown(String),
 }
+
+impl<TLayout> Debug for PathElementDiff<TLayout>
+where
+    TLayout: DiffLayout,
+    TLayout::DirectoryDiff: Debug,
+    TLayout::SymlinkDiff: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Directory(arg0) => f.debug_tuple("Directory").field(arg0).finish(),
+            Self::File => write!(f, "File"),
+            Self::Symlink(arg0) => f.debug_tuple("Symlink").field(arg0).finish(),
+            Self::Nonexistent => write!(f, "Nonexistent"),
+            Self::FilesystemBoundary => write!(f, "FilesystemBoundary"),
+            Self::Unknown(arg0) => f.debug_tuple("Unknown").field(arg0).finish(),
+        }
+    }
+}
+
+impl<TLayout> Clone for PathElementDiff<TLayout>
+where
+    TLayout: DiffLayout,
+    TLayout::DirectoryDiff: Clone,
+    TLayout::SymlinkDiff: Clone,
+{
+    fn clone(&self) -> Self {
+        match self {
+            Self::Directory(arg0) => Self::Directory(arg0.clone()),
+            Self::File => Self::File,
+            Self::Symlink(arg0) => Self::Symlink(arg0.clone()),
+            Self::Nonexistent => Self::Nonexistent,
+            Self::FilesystemBoundary => Self::FilesystemBoundary,
+            Self::Unknown(arg0) => Self::Unknown(arg0.clone()),
+        }
+    }
+}
+
 impl<TLayout: DiffLayout> PathElementDiff<TLayout> {
     pub fn from_nothing(path: &Path) -> Self {
         Self::created_or_deleted(path, false)
@@ -40,16 +80,20 @@ impl<TLayout: DiffLayout> PathElementDiff<TLayout> {
         Self::created_or_deleted(path, true)
     }
     fn created_or_deleted(path: &Path, deleted: bool) -> Self {
-        if !path.exists() {
+        if path.symlink_metadata().is_err() {
             return Self::Nonexistent;
         }
 
         match FileType::from(path) {
-            FileType::Symlink => Self::Symlink,
             FileType::Directory => Self::Directory(if deleted {
                 TLayout::make_directory_diff(Some(path), None)
             } else {
                 TLayout::make_directory_diff(None, Some(path))
+            }),
+            FileType::Symlink => Self::Symlink(if deleted {
+                TLayout::make_symlink_diff(Some(path), None)
+            } else {
+                TLayout::make_symlink_diff(None, Some(path))
             }),
             FileType::File => Self::File,
             FileType::FilesystemBoundary => Self::FilesystemBoundary,
@@ -67,19 +111,55 @@ pub enum PathDiff<TLayout: DiffLayout> {
     //Skipped,
 }
 
+impl<TLayout: DiffLayout> Clone for PathDiff<TLayout>
+where
+    PathElementDiff<TLayout>: Clone,
+{
+    fn clone(&self) -> Self {
+        match self {
+            PathDiff::Recreated { before, after } => PathDiff::Recreated {
+                before: before.clone(),
+                after: after.clone(),
+            },
+            PathDiff::Modified(element) => PathDiff::Modified(element.clone()),
+            //PathDiff::Skipped => PathDiff::Skipped,
+        }
+    }
+}
+
 impl<TLayout: DiffLayout> PathDiff<TLayout> {
     pub fn as_directory_diff(&self) -> Option<&TLayout::DirectoryDiff> {
-        if let PathDiff::Modified(PathElementDiff::Directory(dir)) = self {
-            Some(dir)
-        } else {
-            None
+        match self {
+            // Cases where more directories are involved (this shouldn't ever exist )
+            PathDiff::Recreated {
+                before: PathElementDiff::Directory(dir),
+                after: PathElementDiff::Directory(dir2),
+            } => unreachable!("Recreated directories should be modelled as Modified Directories"),
+
+            // Cases where exactly one directory is involved
+            PathDiff::Recreated {
+                before: PathElementDiff::Directory(dir),
+                after: _,
+            } => Some(dir),
+            PathDiff::Recreated {
+                before: _,
+                after: PathElementDiff::Directory(dir),
+            } => Some(dir),
+            PathDiff::Modified(PathElementDiff::Directory(dir)) => Some(dir),
+
+            // Catch all
+            PathDiff::Modified(_) => None,
+            PathDiff::Recreated {
+                before: _,
+                after: _,
+            } => None,
         }
     }
 }
 
 pub fn dir_diff(before: Option<&Path>, after: Option<&Path>) -> DirDiff {
-    let before = before.filter(|it| it.exists());
-    let after = after.filter(|it| it.exists());
+    let before = before.filter(|it| it.symlink_metadata().is_ok());
+    let after = after.filter(|it| it.symlink_metadata().is_ok());
 
     let mut map = HashMap::new();
 
@@ -127,7 +207,7 @@ pub enum FileType {
 
 impl From<&Path> for FileType {
     fn from(path: &Path) -> Self {
-        assert!(path.exists());
+        assert!(path.symlink_metadata().is_ok());
         if Some(path.symlink_metadata().unwrap().dev())
             != path.parent().map(|it| it.symlink_metadata().unwrap().dev())
         {
@@ -145,8 +225,14 @@ impl From<&Path> for FileType {
 }
 
 pub fn path_diff<TLayout: DiffLayout>(before: &Path, after: &Path) -> PathDiff<TLayout> {
-    let before_t = before.exists().then(|| FileType::from(before));
-    let after_t = after.exists().then(|| FileType::from(after));
+    let before_t = before
+        .symlink_metadata()
+        .is_ok()
+        .then(|| FileType::from(before));
+    let after_t = after
+        .symlink_metadata()
+        .is_ok()
+        .then(|| FileType::from(after));
 
     match (before_t, after_t) {
         //TODO This case is eww
@@ -162,7 +248,9 @@ pub fn path_diff<TLayout: DiffLayout>(before: &Path, after: &Path) -> PathDiff<T
         },
 
         (Some(before_ft), Some(after_ft)) => match (before_ft, after_ft) {
-            (FileType::Symlink, FileType::Symlink) => PathDiff::Modified(PathElementDiff::Symlink),
+            (FileType::Symlink, FileType::Symlink) => PathDiff::Modified(PathElementDiff::Symlink(
+                TLayout::make_symlink_diff(Some(before), Some(after)),
+            )),
             (FileType::File, FileType::File) => PathDiff::Modified(PathElementDiff::File),
             (FileType::Directory, FileType::Directory) => PathDiff::Modified(
                 PathElementDiff::Directory(TLayout::make_directory_diff(Some(before), Some(after))),

@@ -4,7 +4,7 @@ use ratatui::{
     prelude::{Buffer, Rect},
     style::{Style, Stylize as _},
     text::Text,
-    widgets::{Block, List, ListState, StatefulWidget},
+    widgets::{Block, List, ListState, Paragraph, StatefulWidget, Widget},
 };
 
 pub trait NavListAdapter {
@@ -60,6 +60,8 @@ where
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let Some(items) = self.adapter.get_items(self.location) else {
+            let paragraph = Paragraph::new("???").block(Block::bordered().title("List"));
+            Widget::render(paragraph, area, buf);
             return;
         };
 
