@@ -1,19 +1,27 @@
 use std::{
-    path::{Path, PathBuf},
+    collections::{HashMap, VecDeque},
+    ffi::OsStr,
+    os::linux::raw::stat,
+    path::{Component, Path, PathBuf},
     time::{Duration, Instant},
 };
 
-use color_eyre::Result;
+use color_eyre::{Result, owo_colors::OwoColorize};
 use crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
 use ratatui::{
     DefaultTerminal, Frame, Terminal,
-    layout::{Position, Rect},
+    layout::{Constraint, Layout, Position, Rect},
     prelude::Backend,
-    style::{Color, Modifier, Style},
-    text::{Span, Text},
-    widgets::{Block, Scrollbar, ScrollbarOrientation},
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span, Text},
+    widgets::{
+        Block, List, ListState, Paragraph, Scrollbar, ScrollbarOrientation, Widget as _,
+        canvas::Label,
+    },
 };
 use tui_tree_widget::{Tree, TreeItem, TreeState};
+
+use crate::dir_diff::{DiffStatus, DirDiffEntry, LeftRightBoth, dir_diff};
 
 pub fn tui() -> Result<()> {
     color_eyre::install()?;
@@ -29,57 +37,236 @@ pub fn tui() -> Result<()> {
 struct Differ {
     pub path_before: PathBuf,
     pub path_after: PathBuf,
+    pub diff: DirDiffEntry,
 }
 
 impl Differ {
-    pub fn items
+    pub fn new(path_before: PathBuf, path_after: PathBuf) -> Self {
+        let diff = dir_diff(LeftRightBoth::Both(
+            path_before.to_owned(),
+            path_after.to_owned(),
+        ));
+        Self {
+            path_before,
+            path_after,
+            diff,
+        }
+    }
+
+    pub fn get_at_path_mut(&mut self, path: &Path) -> Option<&mut DirDiffEntry> {
+        let segments = path
+            .components()
+            .map(|it| match it {
+                Component::Prefix(..)
+                | Component::RootDir
+                | Component::CurDir
+                | Component::ParentDir => todo!(),
+                Component::Normal(os_str) => PathBuf::from(os_str),
+            })
+            .collect::<Vec<_>>();
+
+        self.get_at_mut(&segments)
+    }
+    pub fn get_at_mut(&mut self, path: &[PathBuf]) -> Option<&mut DirDiffEntry> {
+        let mut e = &mut self.diff;
+
+        for segment in path {
+            match e {
+                DirDiffEntry::Dir { result } => match result {
+                    DiffStatus::OnlyInA { content, .. } => {
+                        e = content.get_mut().entries.get_mut(segment.as_path())?;
+                    }
+                    DiffStatus::OnlyInB { content, .. } => {
+                        e = content.get_mut().entries.get_mut(segment.as_path())?;
+                    }
+                    DiffStatus::InBoth { diff, .. } => {
+                        e = diff.get_mut().entries.get_mut(segment.as_path())?;
+                    }
+                },
+                DirDiffEntry::File { .. }
+                | DirDiffEntry::Symlink { .. }
+                | DirDiffEntry::Skipped => return None,
+            }
+        }
+
+        Some(e)
+    }
+}
+
+struct DirViewState {
+    list: ListState,
+}
+
+impl Default for DirViewState {
+    fn default() -> Self {
+        Self {
+            list: ListState::default().with_selected(Some(0)),
+        }
+    }
 }
 
 struct App {
-    state: TreeState<&'static str>,
-
-    items: Vec<TreeItem<'static, &'static str>>,
-
+    path: PathBuf,
     differ: Differ,
+    view_states: HashMap<PathBuf, DirViewState>,
 }
 
 impl App {
     fn new() -> Self {
-        let differ = Differ {
-            path_before: Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/")
-                .to_owned(),
-            path_after: Path::new("/home/nionidh").to_owned(),
-        };
+        let differ = Differ::new(
+            Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/").to_owned(),
+            Path::new("/home/nionidh").to_owned(),
+        );
         Self {
-            state: TreeState::default(),
-            items: vec![TreeItem::new("a", Text::from("Hiii"), vec![]).unwrap()],
             differ,
+            path: PathBuf::new(),
+            view_states: HashMap::new(),
         }
     }
 
     fn draw(&mut self, frame: &mut Frame) {
         let area = frame.area();
-        let widget = Tree::new(&self.items)
-            .expect("all item identifiers are unique")
-            .block(
-                Block::bordered()
-                    .title("Tree Widget")
-                    .title_bottom(format!("{:?}", self.state)),
-            )
-            .experimental_scrollbar(Some(
-                Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(None)
-                    .track_symbol(None)
-                    .end_symbol(None),
-            ))
-            .highlight_style(
-                Style::new()
-                    .fg(Color::Black)
-                    .bg(Color::LightGreen)
-                    .add_modifier(Modifier::BOLD),
-            )
-            .highlight_symbol(">> ");
-        frame.render_stateful_widget(widget, area, &mut self.state);
+
+        let [left, middle, right] = Layout::horizontal(vec![
+            Constraint::Percentage(25),
+            Constraint::Percentage(50),
+            Constraint::Percentage(25),
+        ])
+        .areas(frame.area());
+
+        if let Some(parent) = self.path.parent()
+            && let Some(result) = self.differ.get_at_path_mut(parent)
+        {
+            let state = self.view_states.entry(parent.to_path_buf()).or_default();
+
+            render_dir_diff_entry(result, state, frame, left);
+        }
+
+        if let Some(result) = self.differ.get_at_path_mut(&self.path) {
+            let state = self.view_states.entry(self.path.clone()).or_default();
+
+            render_dir_diff_entry(result, state, frame, middle);
+
+            if let DirDiffEntry::Dir { result } = result {
+                let contents = match result {
+                    DiffStatus::OnlyInA { content, .. } => content.get(),
+                    DiffStatus::OnlyInB { content, .. } => content.get(),
+                    DiffStatus::InBoth { diff, .. } => diff.get(),
+                };
+
+                let mut items = contents.entries.keys().collect::<Vec<_>>();
+                items.sort();
+
+                if let Some(selected) = state
+                    .list
+                    .selected()
+                    .and_then(|selected| items.get(selected))
+                {
+                    let selected_path = self.path.join(selected);
+                    if let Some(result) = self.differ.get_at_path_mut(&selected_path) {
+                        let state = self.view_states.entry(selected_path.clone()).or_default();
+                        render_dir_diff_entry(result, state, frame, right);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn render_dir_diff_entry(
+    entry: &mut DirDiffEntry,
+    state: &mut DirViewState,
+    frame: &mut Frame,
+    area: Rect,
+) {
+    match entry {
+        DirDiffEntry::File { status } => {
+            let (before, after) = match status {
+                DiffStatus::OnlyInA { content, .. } => (Some(content.get()), None),
+                DiffStatus::OnlyInB { content, .. } => (None, Some(content.get())),
+                DiffStatus::InBoth { diff, .. } => {
+                    let (before, after) = diff.get();
+                    (Some(before), Some(after))
+                }
+            };
+
+            let paragraph = Paragraph::new(vec![
+                Line::from(format!("Before: {:?}", before)),
+                Line::from(format!("After: {:?}", after)),
+            ])
+            .block(Block::bordered().title("File"));
+
+            frame.render_widget(paragraph, area);
+        }
+        DirDiffEntry::Symlink { target } => {
+            let (before, after) = match target {
+                DiffStatus::OnlyInA { content, .. } => (Some(content.get()), None),
+                DiffStatus::OnlyInB { content, .. } => (None, Some(content.get())),
+                DiffStatus::InBoth { diff, .. } => {
+                    let (before, after) = diff.get();
+                    (Some(before), Some(after))
+                }
+            };
+
+            let paragraph = Paragraph::new(vec![
+                Line::from(format!("Before: {:?}", before)),
+                Line::from(format!("After: {:?}", after)),
+            ])
+            .block(Block::bordered().title("Symlink"));
+
+            frame.render_widget(paragraph, area);
+        }
+        DirDiffEntry::Dir { result } => {
+            let contents = match result {
+                DiffStatus::OnlyInA { content, .. } => content.get_mut(),
+                DiffStatus::OnlyInB { content, .. } => content.get_mut(),
+                DiffStatus::InBoth { diff, .. } => diff.get_mut(),
+            };
+
+            let mut items = contents.entries.iter_mut().collect::<Vec<_>>();
+            items.sort_by_key(|it| it.0);
+
+            let list = List::new(items.into_iter().map(|(path, state)| match state {
+                DirDiffEntry::File { status } => match status {
+                    DiffStatus::OnlyInA { .. } => Text::from(path.display().to_string()).red(),
+                    DiffStatus::OnlyInB { .. } => Text::from(path.display().to_string()).green(),
+                    DiffStatus::InBoth { .. } => Text::from(path.display().to_string()).yellow(),
+                },
+                DirDiffEntry::Symlink { target } => match target {
+                    DiffStatus::OnlyInA { .. } => Text::from(path.display().to_string()).red(),
+                    DiffStatus::OnlyInB { .. } => Text::from(path.display().to_string()).green(),
+                    DiffStatus::InBoth { .. } => Text::from(path.display().to_string()).yellow(),
+                },
+                DirDiffEntry::Dir { result } => {
+                    let text = Text::from(format!("{}/", path.display()));
+
+                    match result {
+                        DiffStatus::OnlyInA { .. } => text.red(),
+                        DiffStatus::OnlyInB { .. } => text.green(),
+                        DiffStatus::InBoth { diff, .. } => {
+                            if diff.get_mut().has_meaningful_changes() {
+                                text.yellow()
+                            } else {
+                                text.dark_gray()
+                            }
+                        }
+                    }
+                }
+                DirDiffEntry::Skipped => Text::from(path.display().to_string()).dark_gray(),
+            }))
+            .block(Block::bordered().title("List"))
+            .highlight_style(Style::new().reversed())
+            .highlight_symbol(">>")
+            .repeat_highlight_symbol(true);
+
+            frame.render_stateful_widget(list, area, &mut state.list);
+        }
+        DirDiffEntry::Skipped => {
+            let paragraph = Paragraph::new(vec![Line::from("Skipped")])
+                .block(Block::bordered().title("Skipped"));
+
+            frame.render_widget(paragraph, area);
+        }
     }
 }
 
@@ -97,55 +284,70 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
         if crossterm::event::poll(timeout)? {
             let update = match crossterm::event::read()? {
                 Event::Key(key) if !matches!(key.kind, KeyEventKind::Press) => false,
-                Event::Key(key) => match key.code {
-                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        return Ok(());
-                    }
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Char('\n' | ' ') => app.state.toggle_selected(),
-                    KeyCode::Left => app.state.key_left(),
-                    KeyCode::Right => {
-                        let sel = app.state.selected();
+                Event::Key(key) => {
+                    let state = app.view_states.entry(app.path.clone()).or_default();
 
-                        let mut sel = sel.iter();
-                        let mut item = app
-                            .items
-                            .iter_mut()
-                            .find(|it| it.identifier() == sel.next().unwrap())
-                            .unwrap();
-
-                        for sel in sel {
-                            let idx = item
-                                .children()
-                                .iter()
-                                .enumerate()
-                                .find_map(|(i, it)| (it.identifier() == sel).then_some(i))
-                                .unwrap();
-                            item = item.child_mut(idx).unwrap();
+                    match key.code {
+                        KeyCode::Down => {
+                            state.list.select_next();
+                            true
                         }
+                        KeyCode::Up => {
+                            state.list.select_previous();
+                            true
+                        }
+                        KeyCode::Right => {
+                            if let Some(result) = app.differ.get_at_path_mut(&app.path) {
+                                let state = app.view_states.entry(app.path.clone()).or_default();
 
-                        item.add_child(TreeItem::new_leaf("p", Text::from("PPp")))
-                            .unwrap();
+                                if let DirDiffEntry::Dir { result } = result {
+                                    let contents = match result {
+                                        DiffStatus::OnlyInA { content, .. } => content.get(),
+                                        DiffStatus::OnlyInB { content, .. } => content.get(),
+                                        DiffStatus::InBoth { diff, .. } => diff.get(),
+                                    };
 
-                        app.state.key_right()
+                                    let mut items = contents.entries.keys().collect::<Vec<_>>();
+                                    items.sort();
+
+                                    if let Some(selected) = state
+                                        .list
+                                        .selected()
+                                        .and_then(|selected| items.get(selected))
+                                    {
+                                        let selected_path = app.path.join(selected);
+                                        app.path = selected_path;
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                } else {
+                                    false
+                                }
+                            } else {
+                                false
+                            }
+                        }
+                        KeyCode::Left => {
+                            if let Some(parent) = app.path.parent() {
+                                app.path = parent.to_path_buf();
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                        KeyCode::Char('q') => return Ok(()),
+                        _ => false,
                     }
-                    KeyCode::Down => app.state.key_down(),
-                    KeyCode::Up => app.state.key_up(),
-                    KeyCode::Esc => app.state.select(Vec::new()),
-                    KeyCode::Home => app.state.select_first(),
-                    KeyCode::End => app.state.select_last(),
-                    KeyCode::PageDown => app.state.scroll_down(3),
-                    KeyCode::PageUp => app.state.scroll_up(3),
-                    _ => false,
-                },
-                Event::Mouse(mouse) => match mouse.kind {
-                    MouseEventKind::ScrollDown => app.state.scroll_down(1),
-                    MouseEventKind::ScrollUp => app.state.scroll_up(1),
-                    MouseEventKind::Down(_button) => {
-                        app.state.click_at(Position::new(mouse.column, mouse.row))
-                    }
-                    _ => false,
-                },
+                }
+                // Event::Mouse(mouse) => match mouse.kind {
+                //     MouseEventKind::ScrollDown => app.state.scroll_down(1),
+                //     MouseEventKind::ScrollUp => app.state.scroll_up(1),
+                //     MouseEventKind::Down(_button) => {
+                //         app.state.click_at(Position::new(mouse.column, mouse.row))
+                //     }
+                //     _ => false,
+                // },
                 Event::Resize(_, _) => true,
                 _ => false,
             };

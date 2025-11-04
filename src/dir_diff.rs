@@ -1,7 +1,7 @@
 use std::{
     alloc::System,
     collections::HashMap,
-    fs,
+    fs::{self, File},
     ops::Not,
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
@@ -13,6 +13,173 @@ use colored::Colorize as _;
 use walkdir::DirEntry;
 
 use crate::thunk::Thunk;
+
+pub trait DiffLayout {
+    type DirectoryDiff;
+
+    fn make_directory_diff(before: Option<&Path>, after: Option<&Path>) -> Self::DirectoryDiff;
+}
+
+pub struct DirDiff {
+    pub contents: HashMap<PathBuf, LeftRightBoth<PathBuf>>,
+}
+
+pub enum PathElementDiff<TLayout: DiffLayout> {
+    Directory(TLayout::DirectoryDiff),
+    File,
+    Symlink,
+    Nonexistent,
+    FilesystemBoundary,
+    Unknown(String),
+}
+impl<TLayout: DiffLayout> PathElementDiff<TLayout> {
+    pub fn from_nothing(path: &Path) -> Self {
+        Self::created_or_deleted(path, false)
+    }
+    pub fn to_nothing(path: &Path) -> Self {
+        Self::created_or_deleted(path, true)
+    }
+    fn created_or_deleted(path: &Path, deleted: bool) -> Self {
+        if !path.exists() {
+            return Self::Nonexistent;
+        }
+
+        match FileType::from(path) {
+            FileType::Symlink => Self::Symlink,
+            FileType::Directory => Self::Directory(if deleted {
+                TLayout::make_directory_diff(Some(path), None)
+            } else {
+                TLayout::make_directory_diff(None, Some(path))
+            }),
+            FileType::File => Self::File,
+            FileType::FilesystemBoundary => Self::FilesystemBoundary,
+            FileType::Unknown => Self::Unknown("Unknown".into()),
+        }
+    }
+}
+
+pub enum PathDiff<TLayout: DiffLayout> {
+    Recreated {
+        before: PathElementDiff<TLayout>,
+        after: PathElementDiff<TLayout>,
+    },
+    Modified(PathElementDiff<TLayout>),
+    //Skipped,
+}
+
+impl<TLayout: DiffLayout> PathDiff<TLayout> {
+    pub fn as_directory_diff(&self) -> Option<&TLayout::DirectoryDiff> {
+        if let PathDiff::Modified(PathElementDiff::Directory(dir)) = self {
+            Some(dir)
+        } else {
+            None
+        }
+    }
+}
+
+pub fn dir_diff(before: Option<&Path>, after: Option<&Path>) -> DirDiff {
+    let before = before.filter(|it| it.exists());
+    let after = after.filter(|it| it.exists());
+
+    let mut map = HashMap::new();
+
+    //     let before_root = before_root.filter(|it| {
+    //         it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
+    //     });
+    //     let after_root = after_root.filter(|it| {
+    //         it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
+    //     });
+
+    if let Some(before) = before {
+        for entry in fs::read_dir(before).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let rel_path = path.strip_prefix(before).unwrap();
+
+            map.insert(rel_path.to_owned(), LeftRightBoth::Left(path));
+        }
+    }
+    if let Some(after) = after {
+        for entry in fs::read_dir(after).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let rel_path = path.strip_prefix(after).unwrap();
+
+            map.entry(rel_path.to_owned())
+                .and_modify(|it| *it = it.clone().with_right(path.clone()))
+                .or_insert(LeftRightBoth::Right(path.clone()));
+        }
+    }
+
+    let map: HashMap<PathBuf, LeftRightBoth<PathBuf>> =
+        map.into_iter().map(|(path, entry)| (path, entry)).collect();
+
+    DirDiff { contents: map }
+}
+
+pub enum FileType {
+    Symlink,
+    Directory,
+    File,
+    FilesystemBoundary,
+    Unknown,
+}
+
+impl From<&Path> for FileType {
+    fn from(path: &Path) -> Self {
+        assert!(path.exists());
+        if Some(path.symlink_metadata().unwrap().dev())
+            != path.parent().map(|it| it.symlink_metadata().unwrap().dev())
+        {
+            FileType::FilesystemBoundary
+        } else if path.is_symlink() {
+            FileType::Symlink
+        } else if path.is_dir() {
+            FileType::Directory
+        } else if path.is_file() {
+            FileType::File
+        } else {
+            FileType::FilesystemBoundary
+        }
+    }
+}
+
+pub fn path_diff<TLayout: DiffLayout>(before: &Path, after: &Path) -> PathDiff<TLayout> {
+    let before_t = before.exists().then(|| FileType::from(before));
+    let after_t = after.exists().then(|| FileType::from(after));
+
+    match (before_t, after_t) {
+        //TODO This case is eww
+        (None, None) => PathDiff::Modified(PathElementDiff::Nonexistent),
+
+        (None, Some(after_ft)) => PathDiff::Recreated {
+            before: PathElementDiff::Nonexistent,
+            after: PathElementDiff::from_nothing(&after),
+        },
+        (Some(before_ft), None) => PathDiff::Recreated {
+            before: PathElementDiff::to_nothing(&before),
+            after: PathElementDiff::Nonexistent,
+        },
+
+        (Some(before_ft), Some(after_ft)) => match (before_ft, after_ft) {
+            (FileType::Symlink, FileType::Symlink) => PathDiff::Modified(PathElementDiff::Symlink),
+            (FileType::File, FileType::File) => PathDiff::Modified(PathElementDiff::File),
+            (FileType::Directory, FileType::Directory) => PathDiff::Modified(
+                PathElementDiff::Directory(TLayout::make_directory_diff(Some(before), Some(after))),
+            ),
+            (FileType::FilesystemBoundary, FileType::FilesystemBoundary) => {
+                PathDiff::Modified(PathElementDiff::FilesystemBoundary)
+            }
+            (FileType::Unknown, FileType::Unknown) => {
+                PathDiff::Modified(PathElementDiff::Unknown("Unknown".into()))
+            }
+            (a, b) => PathDiff::Recreated {
+                before: PathElementDiff::to_nothing(before),
+                after: PathElementDiff::from_nothing(after),
+            },
+        },
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum LeftRightBoth<T> {
@@ -37,359 +204,15 @@ impl<T> LeftRightBoth<T> {
             LeftRightBoth::Both(left, _) => LeftRightBoth::Both(left, right),
         }
     }
-}
 
-#[derive(Clone, Debug)]
-pub enum DiffStatus<TData, TModified> {
-    OnlyInA {
-        path: PathBuf,
-        content: TData,
-    },
-    OnlyInB {
-        path: PathBuf,
-        content: TData,
-    },
-    InBoth {
-        before: PathBuf,
-        after: PathBuf,
-        diff: TModified,
-    },
-}
-
-pub enum DirDiffEntry {
-    File {
-        status: DiffStatus<Thunk<SystemTime>, Thunk<(SystemTime, SystemTime)>>,
-    },
-    Symlink {
-        target: DiffStatus<Thunk<PathBuf>, Thunk<(PathBuf, PathBuf)>>,
-    },
-    Dir {
-        result: DiffStatus<Thunk<DirDiffData>, Thunk<DirDiffData>>,
-    },
-    Skipped,
-}
-
-pub struct DirDiffData {
-    pub entries: HashMap<PathBuf, DirDiffEntry>,
-}
-
-impl DirDiffData {
-    pub fn has_meaningful_changes(&mut self) -> bool {
-        self.entries.iter_mut().any(|(_, diff)| match diff {
-            DirDiffEntry::File { .. } | DirDiffEntry::Symlink { .. } => true,
-            DirDiffEntry::Dir { result } => match result {
-                DiffStatus::OnlyInA { .. } | DiffStatus::OnlyInB { .. } => true,
-                DiffStatus::InBoth { diff, .. } => {
-                    let diff = diff.get_mut();
-                    diff.has_meaningful_changes()
-                }
-            },
-            DirDiffEntry::Skipped => false,
-        })
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-enum DirDiffKey {
-    File(PathBuf),
-    Dir(PathBuf),
-    Symlink(PathBuf),
-    Unknown(PathBuf),
-}
-pub fn dir_diff(paths: LeftRightBoth<PathBuf>) -> DirDiffEntry {
-    match paths {
-        LeftRightBoth::Right(after) => DirDiffEntry::Dir {
-            result: DiffStatus::OnlyInB {
-                path: after.clone(),
-                content: Thunk::lazy(move || dir_diff_rec(None, Some(after.as_path()))),
-            },
-        },
-        LeftRightBoth::Left(before) => DirDiffEntry::Dir {
-            result: DiffStatus::OnlyInA {
-                path: before.clone(),
-                content: Thunk::lazy(move || dir_diff_rec(Some(before.as_path()), None)),
-            },
-        },
-
-        LeftRightBoth::Both(before, after) => DirDiffEntry::Dir {
-            result: DiffStatus::InBoth {
-                after: after.clone(),
-                before: before.clone(),
-                diff: Thunk::lazy(move || {
-                    dir_diff_rec(Some(before.as_path()), Some(after.as_path()))
-                }),
-            },
-        },
-    }
-}
-
-pub fn dir_diff_rec(before_root: Option<&Path>, after_root: Option<&Path>) -> DirDiffData {
-    let mut map = HashMap::new();
-
-    let before_root = before_root.filter(|it| {
-        it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
-    });
-    let after_root = after_root.filter(|it| {
-        it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
-    });
-
-    if let Some(before) = before_root {
-        let before_dev = before.symlink_metadata().unwrap().dev();
-
-        for entry in fs::read_dir(before).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            let rel_path = path.strip_prefix(before).unwrap();
-
-            // let path_dev = path.symlink_metadata().unwrap().dev();
-            // if path_dev != before_dev {
-            //     println!("{:?} {:?}!={:?}", path, path_dev, before_dev);
-            //     continue;
-            // }
-
-            let key = if path.is_symlink() {
-                DirDiffKey::Symlink(rel_path.to_owned())
-            } else if path.is_dir() {
-                DirDiffKey::Dir(rel_path.to_owned())
-            } else if path.is_file() {
-                DirDiffKey::File(rel_path.to_owned())
-            } else {
-                DirDiffKey::Unknown(rel_path.to_owned())
-            };
-
-            map.insert(key, LeftRightBoth::Left(path));
+    pub fn map<F, U>(self, mut f: F) -> LeftRightBoth<U>
+    where
+        F: FnMut(T) -> U,
+    {
+        match self {
+            LeftRightBoth::Left(l) => LeftRightBoth::Left(f(l)),
+            LeftRightBoth::Right(r) => LeftRightBoth::Right(f(r)),
+            LeftRightBoth::Both(l, r) => LeftRightBoth::Both(f(l), f(r)),
         }
     }
-
-    if let Some(after) = after_root {
-        let after_dev = after.symlink_metadata().unwrap().dev();
-        for entry in fs::read_dir(after).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            let rel_path = path.strip_prefix(after).unwrap();
-
-            // let path_dev = path.symlink_metadata().unwrap().dev();
-            // if path_dev != after_dev {
-            //     println!("{:?} {:?}!={:?}", path, path_dev, after_dev);
-            //     continue;
-            // }
-
-            let key = if path.is_symlink() {
-                DirDiffKey::Symlink(rel_path.to_owned())
-            } else if path.is_dir() {
-                DirDiffKey::Dir(rel_path.to_owned())
-            } else if path.is_file() {
-                DirDiffKey::File(rel_path.to_owned())
-            } else {
-                DirDiffKey::Unknown(rel_path.to_owned())
-            };
-
-            map.entry(key)
-                .and_modify(|it| *it = it.clone().with_right(path.clone()))
-                .or_insert(LeftRightBoth::Right(path.clone()));
-        }
-    }
-
-    let map: HashMap<PathBuf, DirDiffEntry> = map
-        .into_iter()
-        .map(|(path, entry)| match path {
-            DirDiffKey::File(path_buf) => (
-                path_buf,
-                match entry {
-                    LeftRightBoth::Left(before) => DirDiffEntry::File {
-                        status: DiffStatus::OnlyInA {
-                            content: Thunk::present(before.metadata().unwrap().modified().unwrap()),
-                            path: before,
-                        },
-                    },
-                    LeftRightBoth::Right(after) => DirDiffEntry::File {
-                        status: DiffStatus::OnlyInB {
-                            content: Thunk::present(after.metadata().unwrap().modified().unwrap()),
-                            path: after,
-                        },
-                    },
-                    LeftRightBoth::Both(before, after) => DirDiffEntry::File {
-                        status: DiffStatus::InBoth {
-                            diff: Thunk::present((
-                                before.metadata().unwrap().modified().unwrap(),
-                                after.metadata().unwrap().modified().unwrap(),
-                            )),
-                            before,
-                            after,
-                        },
-                    },
-                },
-            ),
-            DirDiffKey::Dir(path_buf) => {
-                let res = dir_diff(entry);
-                (path_buf, res)
-            }
-            DirDiffKey::Symlink(path_buf) => (
-                path_buf,
-                match entry {
-                    LeftRightBoth::Left(before) => DirDiffEntry::Symlink {
-                        target: DiffStatus::OnlyInA {
-                            path: before.clone(),
-                            content: Thunk::present(std::fs::read_link(before).unwrap()),
-                        },
-                    },
-                    LeftRightBoth::Right(after) => DirDiffEntry::Symlink {
-                        target: DiffStatus::OnlyInA {
-                            path: after.clone(),
-                            content: Thunk::present(std::fs::read_link(after).unwrap()),
-                        },
-                    },
-
-                    LeftRightBoth::Both(before, after) => DirDiffEntry::Symlink {
-                        target: DiffStatus::InBoth {
-                            after: after.clone(),
-                            before: before.clone(),
-                            diff: Thunk::present((
-                                std::fs::read_link(before).unwrap(),
-                                std::fs::read_link(after).unwrap(),
-                            )),
-                        },
-                    },
-                },
-            ),
-            DirDiffKey::Unknown(path_buf) => todo!(),
-        })
-        .collect();
-
-    DirDiffData { entries: map }
-}
-
-pub fn format_dir_diff(diff: &mut DirDiffEntry) {
-    pub fn format_dir_diff_rec(path: &Path, diff: &mut DirDiffEntry) {
-        match diff {
-            DirDiffEntry::File { status } => match status {
-                DiffStatus::OnlyInA { path: before, .. } => {
-                    println!("{}", format!("- {}: Removed", path.display()).red())
-                }
-                DiffStatus::OnlyInB { path: after, .. } => {
-                    println!("{}", format!("+ {}: Created", path.display()).green())
-                }
-                DiffStatus::InBoth {
-                    before,
-                    after,
-                    diff,
-                } => {
-                    let (before_time, after_time) = diff.get();
-                    if before_time != after_time {
-                        println!("M {}: Modified {:?} {:?}", path.display(), before, after);
-                    }
-                }
-            },
-            DirDiffEntry::Dir { result: status } => match status {
-                DiffStatus::OnlyInA { .. } => {
-                    println!("{}", format!("- {}/: Removed", path.display()).red())
-                }
-                DiffStatus::OnlyInB {
-                    path: created_path, ..
-                } => {
-                    let is_empty = fs::read_dir(created_path).unwrap().next().is_none();
-                    if is_empty {
-                        println!("{}", format!("+ {}/: Created", path.display()).white())
-                    } else {
-                        println!("{}", format!("+ {}/...: Created", path.display()).green())
-                    }
-                }
-                DiffStatus::InBoth { diff, .. } => {
-                    let mut paths = diff.get_mut().entries.iter_mut().collect::<Vec<_>>();
-                    paths.sort_by_key(|(rel_path, _)| rel_path.to_string_lossy());
-
-                    for (rel_path, entry) in paths {
-                        let child_path = path.join(rel_path);
-                        format_dir_diff_rec(&child_path, entry);
-                    }
-                }
-            },
-            DirDiffEntry::Skipped => println!(
-                "{}",
-                format!("x {}: Skipped", path.display()).bright_black()
-            ),
-            DirDiffEntry::Symlink { target } => match target {
-                DiffStatus::OnlyInA { .. } => {
-                    println!("{}", format!("- {}: Removed", path.display()).red());
-                }
-                DiffStatus::OnlyInB { content, .. } => {
-                    if let Ok(after_nixpath) = path.strip_prefix("/nix/store")
-                        && let Some((after_generation, after_subpath)) =
-                            after_nixpath.display().to_string().split_once("-")
-                    {
-                        println!(
-                            "{}",
-                            format!(
-                                "+ {}: Added NixPath to {}",
-                                path.display(),
-                                content.get().display()
-                            )
-                            .bright_black()
-                        );
-                    } else {
-                        println!(
-                            "{}",
-                            format!(
-                                "+ {}: Added Symlink to {}",
-                                path.display(),
-                                content.get().display()
-                            )
-                            .green()
-                        );
-                    }
-                }
-                DiffStatus::InBoth { diff, .. } => {
-                    let (before, after) = diff.get();
-                    if before == after {
-                        return;
-                    }
-
-                    if let Ok(before_nixpath) = before.strip_prefix("/nix/store")
-                        && let Ok(after_nixpath) = after.strip_prefix("/nix/store")
-                        && let Some((before_generation, before_subpath)) =
-                            before_nixpath.display().to_string().split_once("-")
-                        && let Some((after_generation, after_subpath)) =
-                            after_nixpath.display().to_string().split_once("-")
-                    {
-                        // Nixos Symlink
-                        if before_subpath == after_subpath {
-                            // Only changed generation
-                            println!(
-                                "{}",
-                                format!(
-                                    "M {}: Changed Nix Generation {} to {}",
-                                    path.display(),
-                                    before_generation,
-                                    after_generation
-                                )
-                                .bright_black()
-                            );
-                        } else {
-                            println!(
-                                "{}",
-                                format!(
-                                    "M {}: Changed Nix Symlink {} to {}",
-                                    path.display(),
-                                    before_nixpath.display(),
-                                    after_nixpath.display()
-                                )
-                                .white()
-                            );
-                        }
-                    } else {
-                        // Non-Nixos Symlink
-
-                        println!(
-                            "M {}: Modified Before: {} After: {}",
-                            path.display(),
-                            before.display(),
-                            after.display()
-                        );
-                    }
-                }
-            },
-        }
-    }
-
-    format_dir_diff_rec(Path::new(""), diff);
 }

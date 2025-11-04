@@ -1,126 +1,305 @@
+mod nav_list;
+
+use color_eyre::Result;
 use std::{
-    collections::{HashMap, VecDeque},
-    ffi::OsStr,
-    os::linux::raw::stat,
-    path::{Component, Path, PathBuf},
+    collections::HashMap,
+    fs::OpenOptions,
+    os::unix::fs::MetadataExt,
+    path::{Path, PathBuf},
     time::{Duration, Instant},
 };
-
-use color_eyre::{Result, owo_colors::OwoColorize};
-use crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
-use ratatui::{
-    DefaultTerminal, Frame, Terminal,
-    layout::{Constraint, Layout, Position, Rect},
-    prelude::Backend,
-    style::{Color, Modifier, Style, Stylize},
-    text::{Line, Span, Text},
-    widgets::{
-        Block, List, ListState, Paragraph, Scrollbar, ScrollbarOrientation, Widget as _,
-        canvas::Label,
-    },
+use tracing::level_filters::LevelFilter;
+use tracing_error::ErrorLayer;
+use tracing_subscriber::{
+    Layer as _, filter::Directive, layer::SubscriberExt as _, util::SubscriberInitExt as _,
 };
-use tui_tree_widget::{Tree, TreeItem, TreeState};
 
-use crate::dir_diff::{DiffStatus, DirDiffEntry, LeftRightBoth, dir_diff};
+use crossterm::event::{Event, KeyCode, KeyEventKind};
+use ratatui::{
+    Frame, Terminal,
+    layout::{Constraint, Layout, Rect},
+    prelude::Backend,
+    style::{Color, Style, Stylize},
+    text::{Span, Text},
+};
+
+use crate::{
+    dir_diff::{self, DiffLayout, DirDiff, LeftRightBoth, PathDiff, PathElementDiff, path_diff},
+    tui::nav_list::{NavList, NavListAdapter, NavListItem, NavListState},
+};
 
 pub fn tui() -> Result<()> {
     color_eyre::install()?;
+
+    let mut open = OpenOptions::new();
+    open.truncate(true);
+    open.write(true);
+    open.create(true);
+    let log_file = open.open("LOG.log")?;
+    let file_subscriber = tracing_subscriber::fmt::layer()
+        .with_file(true)
+        .with_line_number(true)
+        .with_writer(log_file)
+        .with_target(false)
+        .with_ansi(false)
+        .with_filter(
+            tracing_subscriber::filter::EnvFilter::builder()
+                .with_default_directive(LevelFilter::DEBUG.into())
+                .from_env_lossy(),
+        );
+    tracing_subscriber::registry()
+        .with(file_subscriber)
+        .with(ErrorLayer::default())
+        .init();
+
+    tracing::info!("Starting Tui");
     let mut terminal = ratatui::init();
 
+    tracing::info!("Starting App");
     let app = App::new();
     let res = run_app(&mut terminal, app);
 
+    tracing::info!("Shutting down");
     ratatui::restore();
     res
 }
 
-struct Differ {
-    pub path_before: PathBuf,
-    pub path_after: PathBuf,
-    pub diff: DirDiffEntry,
-}
+pub struct DiffCacheLayout;
+impl DiffLayout for DiffCacheLayout {
+    type DirectoryDiff = Vec<(PathBuf, LeftRightBoth<PathBuf>)>;
 
-impl Differ {
-    pub fn new(path_before: PathBuf, path_after: PathBuf) -> Self {
-        let diff = dir_diff(LeftRightBoth::Both(
-            path_before.to_owned(),
-            path_after.to_owned(),
-        ));
-        Self {
-            path_before,
-            path_after,
-            diff,
-        }
-    }
-
-    pub fn get_at_path_mut(&mut self, path: &Path) -> Option<&mut DirDiffEntry> {
-        let segments = path
-            .components()
-            .map(|it| match it {
-                Component::Prefix(..)
-                | Component::RootDir
-                | Component::CurDir
-                | Component::ParentDir => todo!(),
-                Component::Normal(os_str) => PathBuf::from(os_str),
+    fn make_directory_diff(before: Option<&Path>, after: Option<&Path>) -> Self::DirectoryDiff {
+        let diff = dir_diff::dir_diff(before, after);
+        let mut items = diff
+            .contents
+            .iter()
+            .map(|(path, diff)| {
+                let path = path.clone();
+                let diff = diff.clone();
+                (path, diff)
             })
             .collect::<Vec<_>>();
-
-        self.get_at_mut(&segments)
+        items.sort_by_cached_key(|it| it.0.clone());
+        items
     }
-    pub fn get_at_mut(&mut self, path: &[PathBuf]) -> Option<&mut DirDiffEntry> {
-        let mut e = &mut self.diff;
+}
 
-        for segment in path {
-            match e {
-                DirDiffEntry::Dir { result } => match result {
-                    DiffStatus::OnlyInA { content, .. } => {
-                        e = content.get_mut().entries.get_mut(segment.as_path())?;
+pub struct DiffCache {
+    pub diffs: HashMap<PathBuf, PathDiff<DiffCacheLayout>>,
+    pub before: PathBuf,
+    pub after: PathBuf,
+}
+
+impl DiffCache {
+    fn get_diff(&mut self, location: PathBuf) -> &PathDiff<DiffCacheLayout> {
+        self.diffs.entry(location.clone()).or_insert_with(|| {
+            let before = self.before.join(&location);
+            let after = self.after.join(&location);
+
+            path_diff(&before, &after)
+        })
+    }
+}
+
+enum EntryState {
+    Created,
+    Deleted,
+    Modified,
+    Unchanged,
+    Unimportant,
+}
+
+fn display_diff(
+    path: &Path,
+    diff: &PathElementDiff<DiffCacheLayout>,
+    state: EntryState,
+) -> Text<'static> {
+    let text = match diff {
+        PathElementDiff::Directory(_) => Text::from(format!(" {}/", path.display())),
+        PathElementDiff::File => Text::from(format!(" {}", path.display())),
+        PathElementDiff::Symlink => Text::from(format!(" {}", path.display())),
+        PathElementDiff::Nonexistent => Text::from(format!(" {}", path.display())),
+        PathElementDiff::Unknown(_) => Text::from(format!("? {}", path.display())),
+        PathElementDiff::FilesystemBoundary => Text::from(format!(" {}/", path.display())),
+    };
+    match state {
+        EntryState::Created => text.green(),
+        EntryState::Deleted => text.red(),
+        EntryState::Modified => text.yellow(),
+        EntryState::Unchanged => text.gray(),
+        EntryState::Unimportant => text.dark_gray(),
+    }
+}
+
+impl NavListAdapter for DiffCache {
+    type Location = PathBuf;
+
+    fn get_items(
+        &mut self,
+        location: &Self::Location,
+    ) -> Option<Vec<NavListItem<'_, Self::Location>>> {
+        let diff = self.get_diff(location.clone());
+
+        if let Some(dir) = diff.as_directory_diff() {
+            let items = dir
+                .clone()
+                .into_iter()
+                .flat_map(|(rel_path, _)| {
+                    let child_diff = self.get_diff(location.join(&rel_path));
+                    let sub_location = Some(location.join(&rel_path));
+
+                    match child_diff {
+                        PathDiff::Recreated { before, after } => match (before, after) {
+                            (
+                                diff_before @ PathElementDiff::Directory(before_dir),
+                                diff_after @ PathElementDiff::FilesystemBoundary,
+                            ) => {
+                                tracing::debug!("{:?}", before_dir);
+                                if before_dir.is_empty() {
+                                    vec![NavListItem {
+                                        text: display_diff(
+                                            &rel_path,
+                                            diff_after,
+                                            EntryState::Unimportant,
+                                        ),
+                                        sub_location: sub_location.clone(),
+                                    }]
+                                } else {
+                                    vec![
+                                        NavListItem {
+                                            text: display_diff(
+                                                &rel_path,
+                                                diff_before,
+                                                EntryState::Deleted,
+                                            ),
+                                            sub_location: sub_location.clone(),
+                                        },
+                                        NavListItem {
+                                            text: display_diff(
+                                                &rel_path,
+                                                diff_after,
+                                                EntryState::Created,
+                                            ),
+                                            sub_location: sub_location.clone(),
+                                        },
+                                    ]
+                                }
+                            }
+                            (before, after) => {
+                                let mut vec = Vec::new();
+                                match before {
+                                    PathElementDiff::Nonexistent => {}
+                                    diff => vec.push(NavListItem {
+                                        text: display_diff(&rel_path, diff, EntryState::Deleted),
+                                        sub_location: sub_location.clone(),
+                                    }),
+                                }
+
+                                match after {
+                                    PathElementDiff::Nonexistent => {}
+                                    diff => vec.push(NavListItem {
+                                        text: display_diff(&rel_path, diff, EntryState::Created),
+                                        sub_location: sub_location.clone(),
+                                    }),
+                                }
+                                vec
+                            }
+                        },
+                        PathDiff::Modified(path_element_diff) => {
+                            vec![NavListItem {
+                                text: display_diff(
+                                    &rel_path,
+                                    path_element_diff,
+                                    EntryState::Modified,
+                                ),
+                                sub_location,
+                            }]
+                        }
                     }
-                    DiffStatus::OnlyInB { content, .. } => {
-                        e = content.get_mut().entries.get_mut(segment.as_path())?;
-                    }
-                    DiffStatus::InBoth { diff, .. } => {
-                        e = diff.get_mut().entries.get_mut(segment.as_path())?;
-                    }
-                },
-                DirDiffEntry::File { .. }
-                | DirDiffEntry::Symlink { .. }
-                | DirDiffEntry::Skipped => return None,
-            }
+                })
+                .collect();
+            Some(items)
+        } else {
+            None
         }
-
-        Some(e)
     }
-}
 
-struct DirViewState {
-    list: ListState,
-}
+    fn get_next(
+        &mut self,
+        location: &Self::Location,
+        previous_sub_location: Option<&Self::Location>,
+    ) -> Option<Self::Location> {
+        let diff = self.get_diff(location.clone()).as_directory_diff()?;
 
-impl Default for DirViewState {
-    fn default() -> Self {
-        Self {
-            list: ListState::default().with_selected(Some(0)),
+        if let Some(prev) = previous_sub_location {
+            let iter = diff.iter();
+            let mut iter = iter.skip_while(|(it, _)| prev != it);
+
+            if let Some((current, _)) = iter.next() {
+                if let Some((path, _)) = iter.next() {
+                    Some(path.clone())
+                } else {
+                    Some(current.clone())
+                }
+            } else {
+                diff.first().map(|(path, _)| path.clone())
+            }
+        } else {
+            diff.first().map(|(path, _)| path.clone())
+        }
+    }
+
+    fn get_previous<'a>(
+        &'a mut self,
+        location: &Self::Location,
+        next_sub_location: Option<&'a Self::Location>,
+    ) -> Option<Self::Location> {
+        let diff = self.get_diff(location.clone()).as_directory_diff()?;
+
+        if let Some(prev) = &next_sub_location {
+            let iter = diff.iter().rev();
+            let mut iter = iter.skip_while(|(it, _)| prev != &it);
+
+            if let Some((current, _)) = iter.next() {
+                if let Some((path, _)) = iter.next() {
+                    Some(path.clone())
+                } else {
+                    Some(current.clone())
+                }
+            } else {
+                diff.last().map(|(path, _)| path.clone())
+            }
+        } else {
+            diff.last().map(|(path, _)| path.clone())
         }
     }
 }
 
 struct App {
     path: PathBuf,
-    differ: Differ,
-    view_states: HashMap<PathBuf, DirViewState>,
+
+    nav_list_states: HashMap<PathBuf, NavListState<PathBuf>>,
+    diff_cache: DiffCache,
 }
 
 impl App {
     fn new() -> Self {
-        let differ = Differ::new(
-            Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/").to_owned(),
-            Path::new("/home/nionidh").to_owned(),
-        );
+        // let differ = Differ::new(
+        //     Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/").to_owned(),
+        //     Path::new("/home/nionidh").to_owned(),
+        // );
+        let initial_path = PathBuf::new();
+        let diff_cache = DiffCache {
+            diffs: HashMap::new(),
+            before: Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/")
+                .to_owned(),
+            after: Path::new("/home/nionidh").to_owned(),
+        };
+
         Self {
-            differ,
-            path: PathBuf::new(),
-            view_states: HashMap::new(),
+            path: initial_path.clone(),
+            nav_list_states: HashMap::new(),
+            diff_cache,
         }
     }
 
@@ -134,138 +313,22 @@ impl App {
         ])
         .areas(frame.area());
 
-        if let Some(parent) = self.path.parent()
-            && let Some(result) = self.differ.get_at_path_mut(parent)
-        {
-            let state = self.view_states.entry(parent.to_path_buf()).or_default();
+        let navlist = NavList::new(&mut self.diff_cache, &self.path);
+        let state = self.nav_list_states.entry(self.path.clone()).or_default();
+        let selected = state.selected.clone();
+        frame.render_stateful_widget(navlist, middle, state);
 
-            render_dir_diff_entry(result, state, frame, left);
+        if let Some(selected) = &selected {
+            let state = self.nav_list_states.entry(selected.clone()).or_default();
+            let navlist = NavList::new(&mut self.diff_cache, &selected);
+            frame.render_stateful_widget(navlist, right, state);
         }
 
-        if let Some(result) = self.differ.get_at_path_mut(&self.path) {
-            let state = self.view_states.entry(self.path.clone()).or_default();
-
-            render_dir_diff_entry(result, state, frame, middle);
-
-            if let DirDiffEntry::Dir { result } = result {
-                let contents = match result {
-                    DiffStatus::OnlyInA { content, .. } => content.get(),
-                    DiffStatus::OnlyInB { content, .. } => content.get(),
-                    DiffStatus::InBoth { diff, .. } => diff.get(),
-                };
-
-                let mut items = contents.entries.keys().collect::<Vec<_>>();
-                items.sort();
-
-                if let Some(selected) = state
-                    .list
-                    .selected()
-                    .and_then(|selected| items.get(selected))
-                {
-                    let selected_path = self.path.join(selected);
-                    if let Some(result) = self.differ.get_at_path_mut(&selected_path) {
-                        let state = self.view_states.entry(selected_path.clone()).or_default();
-                        render_dir_diff_entry(result, state, frame, right);
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn render_dir_diff_entry(
-    entry: &mut DirDiffEntry,
-    state: &mut DirViewState,
-    frame: &mut Frame,
-    area: Rect,
-) {
-    match entry {
-        DirDiffEntry::File { status } => {
-            let (before, after) = match status {
-                DiffStatus::OnlyInA { content, .. } => (Some(content.get()), None),
-                DiffStatus::OnlyInB { content, .. } => (None, Some(content.get())),
-                DiffStatus::InBoth { diff, .. } => {
-                    let (before, after) = diff.get();
-                    (Some(before), Some(after))
-                }
-            };
-
-            let paragraph = Paragraph::new(vec![
-                Line::from(format!("Before: {:?}", before)),
-                Line::from(format!("After: {:?}", after)),
-            ])
-            .block(Block::bordered().title("File"));
-
-            frame.render_widget(paragraph, area);
-        }
-        DirDiffEntry::Symlink { target } => {
-            let (before, after) = match target {
-                DiffStatus::OnlyInA { content, .. } => (Some(content.get()), None),
-                DiffStatus::OnlyInB { content, .. } => (None, Some(content.get())),
-                DiffStatus::InBoth { diff, .. } => {
-                    let (before, after) = diff.get();
-                    (Some(before), Some(after))
-                }
-            };
-
-            let paragraph = Paragraph::new(vec![
-                Line::from(format!("Before: {:?}", before)),
-                Line::from(format!("After: {:?}", after)),
-            ])
-            .block(Block::bordered().title("Symlink"));
-
-            frame.render_widget(paragraph, area);
-        }
-        DirDiffEntry::Dir { result } => {
-            let contents = match result {
-                DiffStatus::OnlyInA { content, .. } => content.get_mut(),
-                DiffStatus::OnlyInB { content, .. } => content.get_mut(),
-                DiffStatus::InBoth { diff, .. } => diff.get_mut(),
-            };
-
-            let mut items = contents.entries.iter_mut().collect::<Vec<_>>();
-            items.sort_by_key(|it| it.0);
-
-            let list = List::new(items.into_iter().map(|(path, state)| match state {
-                DirDiffEntry::File { status } => match status {
-                    DiffStatus::OnlyInA { .. } => Text::from(path.display().to_string()).red(),
-                    DiffStatus::OnlyInB { .. } => Text::from(path.display().to_string()).green(),
-                    DiffStatus::InBoth { .. } => Text::from(path.display().to_string()).yellow(),
-                },
-                DirDiffEntry::Symlink { target } => match target {
-                    DiffStatus::OnlyInA { .. } => Text::from(path.display().to_string()).red(),
-                    DiffStatus::OnlyInB { .. } => Text::from(path.display().to_string()).green(),
-                    DiffStatus::InBoth { .. } => Text::from(path.display().to_string()).yellow(),
-                },
-                DirDiffEntry::Dir { result } => {
-                    let text = Text::from(format!("{}/", path.display()));
-
-                    match result {
-                        DiffStatus::OnlyInA { .. } => text.red(),
-                        DiffStatus::OnlyInB { .. } => text.green(),
-                        DiffStatus::InBoth { diff, .. } => {
-                            if diff.get_mut().has_meaningful_changes() {
-                                text.yellow()
-                            } else {
-                                text.dark_gray()
-                            }
-                        }
-                    }
-                }
-                DirDiffEntry::Skipped => Text::from(path.display().to_string()).dark_gray(),
-            }))
-            .block(Block::bordered().title("List"))
-            .highlight_style(Style::new().reversed())
-            .highlight_symbol(">>")
-            .repeat_highlight_symbol(true);
-
-            frame.render_stateful_widget(list, area, &mut state.list);
-        }
-        DirDiffEntry::Skipped => {
-            let paragraph = Paragraph::new(vec![Line::from("Skipped")])
-                .block(Block::bordered().title("Skipped"));
-
-            frame.render_widget(paragraph, area);
+        if let Some(parent) = self.path.parent() {
+            let parent = parent.to_path_buf();
+            let state = self.nav_list_states.entry(parent.clone()).or_default();
+            let navlist = NavList::new(&mut self.diff_cache, &parent);
+            frame.render_stateful_widget(navlist, left, state);
         }
     }
 }
@@ -285,45 +348,24 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> Result<()> {
             let update = match crossterm::event::read()? {
                 Event::Key(key) if !matches!(key.kind, KeyEventKind::Press) => false,
                 Event::Key(key) => {
-                    let state = app.view_states.entry(app.path.clone()).or_default();
+                    let state = app.nav_list_states.entry(app.path.clone()).or_default();
 
                     match key.code {
                         KeyCode::Down => {
-                            state.list.select_next();
+                            state.selected =
+                                app.diff_cache.get_next(&app.path, state.selected.as_ref());
                             true
                         }
                         KeyCode::Up => {
-                            state.list.select_previous();
+                            state.selected = app
+                                .diff_cache
+                                .get_previous(&app.path, state.selected.as_ref());
                             true
                         }
                         KeyCode::Right => {
-                            if let Some(result) = app.differ.get_at_path_mut(&app.path) {
-                                let state = app.view_states.entry(app.path.clone()).or_default();
-
-                                if let DirDiffEntry::Dir { result } = result {
-                                    let contents = match result {
-                                        DiffStatus::OnlyInA { content, .. } => content.get(),
-                                        DiffStatus::OnlyInB { content, .. } => content.get(),
-                                        DiffStatus::InBoth { diff, .. } => diff.get(),
-                                    };
-
-                                    let mut items = contents.entries.keys().collect::<Vec<_>>();
-                                    items.sort();
-
-                                    if let Some(selected) = state
-                                        .list
-                                        .selected()
-                                        .and_then(|selected| items.get(selected))
-                                    {
-                                        let selected_path = app.path.join(selected);
-                                        app.path = selected_path;
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    false
-                                }
+                            if let Some(selected) = &state.selected {
+                                app.path = selected.clone();
+                                true
                             } else {
                                 false
                             }
