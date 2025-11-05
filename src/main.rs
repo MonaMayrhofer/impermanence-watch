@@ -9,6 +9,7 @@ pub mod cli_output;
 pub mod dir_diff;
 pub mod thunk;
 pub mod tui;
+pub mod typed_path;
 
 fn main() {
     let args = Cli::parse();

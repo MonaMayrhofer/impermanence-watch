@@ -1,0 +1,98 @@
+use std::{
+    os::unix::fs::MetadataExt as _,
+    path::{Path, PathBuf},
+};
+
+/// Keep in mind that path existence can change between creation and usage.
+pub struct ExistentPath(PathBuf);
+
+impl TryFrom<PathBuf> for ExistentPath {
+    type Error = std::io::Error;
+
+    fn try_from(value: PathBuf) -> Result<Self, Self::Error> {
+        //Symlink_metadata instead of exists in order to not follow symlinks
+        value.symlink_metadata()?;
+        Ok(Self(value))
+    }
+}
+
+impl ExistentPath {
+    pub fn as_path(&self) -> &Path {
+        &self.0
+    }
+}
+
+pub trait AsPath {
+    fn as_path(&self) -> &Path;
+}
+
+macro_rules! typed_path_type {
+    ($name: ident) => {
+        pub struct $name(ExistentPath);
+
+        impl AsPath for $name {
+            fn as_path(&self) -> &Path {
+                &self.0.as_path()
+            }
+        }
+    };
+}
+
+typed_path_type!(SymlinkPath);
+typed_path_type!(DirectoryPath);
+typed_path_type!(FilePath);
+typed_path_type!(FilesystemBoundaryPath);
+typed_path_type!(UnknownPath);
+
+impl SymlinkPath {
+    pub fn target(&self) -> PathBuf {
+        std::fs::read_link(&self.0.as_path())
+            .expect("path has already been checked to exist and be a symlink. The filesystem must have changed while the program was running.")
+    }
+}
+impl DirectoryPath {
+    pub fn read_dir(&self) -> std::fs::ReadDir {
+        std::fs::read_dir(&self.0.as_path()).expect("path has already been checked to exist and be a directory. The filesystem must have changed while the program was running.")
+    }
+}
+
+pub enum TypedPath {
+    Symlink(SymlinkPath),
+    Directory(DirectoryPath),
+    File(FilePath),
+    FilesystemBoundary(FilesystemBoundaryPath),
+    Unknown(UnknownPath),
+}
+
+impl From<ExistentPath> for TypedPath {
+    fn from(path: ExistentPath) -> Self {
+        if Some(path.0.symlink_metadata().unwrap().dev())
+            != path
+                .0
+                .parent()
+                .map(|it| it.symlink_metadata().unwrap().dev())
+        {
+            TypedPath::FilesystemBoundary(FilesystemBoundaryPath(path))
+        } else if path.0.is_symlink() {
+            TypedPath::Symlink(SymlinkPath(path))
+        } else if path.0.is_dir() {
+            TypedPath::Directory(DirectoryPath(path))
+        } else if path.0.is_file() {
+            TypedPath::File(FilePath(path))
+        } else {
+            TypedPath::Unknown(UnknownPath(path))
+        }
+    }
+}
+
+impl TypedPath {
+    pub fn as_path(&self) -> &Path {
+        match self {
+            TypedPath::Symlink(path) => path.as_path(),
+            TypedPath::Directory(path) => path.as_path(),
+            TypedPath::File(path) => path.as_path(),
+            TypedPath::FilesystemBoundary(path) => path.as_path(),
+            TypedPath::Unknown(path) => path.as_path(),
+        }
+    }
+}

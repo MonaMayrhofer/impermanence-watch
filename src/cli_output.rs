@@ -1,26 +1,16 @@
 use std::path::{Path, PathBuf};
 
-use crate::dir_diff::{LeftRightBoth, dir_diff};
+use crate::dir_diff::{DiffCache, LeftRightBoth};
 
 pub fn print_dir_diff(before: &Path, after: &Path) {
-    print_dir_diff_rec(before, after);
+    let mut cache = DiffCache::new(before, after);
 
-    fn print_dir_diff_rec(before: &Path, after: &Path) {
-        let diff = dir_diff(Some(before), Some(after));
-        let mut contents = diff.contents.iter().collect::<Vec<_>>();
-        contents.sort_by_key(|it| it.0);
+    print_dir_diff_rec(&mut cache, PathBuf::new());
 
-        for (path, content) in diff.contents {
-            match content {
-                LeftRightBoth::Left(before) => {
-                    print_deleted(&path, &before);
-                }
-                LeftRightBoth::Right(after) => {
-                    print_created(&path, &after);
-                }
-                LeftRightBoth::Both(_, _) => {}
-            }
-        }
+    fn print_dir_diff_rec(cache: &mut DiffCache, location: PathBuf) {
+        let diff = cache.get_diff(location);
+
+        todo!();
     }
 
     fn print_deleted(path: &Path, target: &PathBuf) {

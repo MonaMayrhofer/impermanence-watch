@@ -1,201 +1,180 @@
 use std::{
-    alloc::System,
     collections::HashMap,
     fmt::Debug,
     fs::{self, File},
-    ops::Not,
+    hash::Hash,
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
-    thread::JoinHandle,
-    time::SystemTime,
 };
 
-use colored::Colorize as _;
-use walkdir::DirEntry;
-
-use crate::thunk::Thunk;
+use crate::typed_path::{DirectoryPath, ExistentPath, SymlinkPath, TypedPath};
 
 pub trait DiffLayout {
     type DirectoryDiff;
     type SymlinkDiff;
-
-    fn make_directory_diff(before: Option<&Path>, after: Option<&Path>) -> Self::DirectoryDiff;
-    fn make_symlink_diff(before: Option<&Path>, after: Option<&Path>) -> Self::SymlinkDiff;
 }
 
 pub struct DirDiff {
     pub contents: HashMap<PathBuf, LeftRightBoth<PathBuf>>,
 }
 
-pub enum PathElementDiff<TLayout: DiffLayout> {
-    Directory(TLayout::DirectoryDiff),
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PathElementState {
+    Directory(DirectoryDiff),
     File,
-    Symlink(TLayout::SymlinkDiff),
+    Symlink(SymlinkState),
+    FilesystemBoundary,
+    Unknown(String),
+}
+
+// TODO I left off here - is this a good solution? The PathElementStateAction feels like a hack...
+//
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PathElementStateAction<TState, TDiff> {
+    Create(TState),
+    Delete(TState),
+    Modify(TDiff),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PathElementDiff {
+    Directory(PathElementStateAction<DirectoryDiff, DirectoryDiff>),
+    File,
+    Symlink(PathElementStateAction<SymlinkState, SymlinkDiff>),
     Nonexistent,
     FilesystemBoundary,
     Unknown(String),
 }
 
-impl<TLayout> Debug for PathElementDiff<TLayout>
-where
-    TLayout: DiffLayout,
-    TLayout::DirectoryDiff: Debug,
-    TLayout::SymlinkDiff: Debug,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Directory(arg0) => f.debug_tuple("Directory").field(arg0).finish(),
-            Self::File => write!(f, "File"),
-            Self::Symlink(arg0) => f.debug_tuple("Symlink").field(arg0).finish(),
-            Self::Nonexistent => write!(f, "Nonexistent"),
-            Self::FilesystemBoundary => write!(f, "FilesystemBoundary"),
-            Self::Unknown(arg0) => f.debug_tuple("Unknown").field(arg0).finish(),
+impl PathElementDiff {
+    pub fn create(state: PathElementState) -> PathElementDiff {
+        match state {
+            PathElementState::Directory(diff) => {
+                PathElementDiff::Directory(PathElementStateAction::Create(diff))
+            }
+            PathElementState::File => PathElementDiff::File,
+            PathElementState::Symlink(diff) => {
+                PathElementDiff::Symlink(PathElementStateAction::Create(diff))
+            }
+            PathElementState::FilesystemBoundary => PathElementDiff::FilesystemBoundary,
+            PathElementState::Unknown(msg) => PathElementDiff::Unknown(msg),
+        }
+    }
+
+    pub fn delete(state: PathElementState) -> PathElementDiff {
+        match state {
+            PathElementState::Directory(diff) => {
+                PathElementDiff::Directory(PathElementStateAction::Delete(diff))
+            }
+            PathElementState::File => PathElementDiff::File,
+            PathElementState::Symlink(diff) => {
+                PathElementDiff::Symlink(PathElementStateAction::Delete(diff))
+            }
+            PathElementState::FilesystemBoundary => PathElementDiff::FilesystemBoundary,
+            PathElementState::Unknown(msg) => PathElementDiff::Unknown(msg),
         }
     }
 }
 
-impl<TLayout> Clone for PathElementDiff<TLayout>
-where
-    TLayout: DiffLayout,
-    TLayout::DirectoryDiff: Clone,
-    TLayout::SymlinkDiff: Clone,
-{
-    fn clone(&self) -> Self {
-        match self {
-            Self::Directory(arg0) => Self::Directory(arg0.clone()),
-            Self::File => Self::File,
-            Self::Symlink(arg0) => Self::Symlink(arg0.clone()),
-            Self::Nonexistent => Self::Nonexistent,
-            Self::FilesystemBoundary => Self::FilesystemBoundary,
-            Self::Unknown(arg0) => Self::Unknown(arg0.clone()),
-        }
-    }
-}
-
-impl<TLayout: DiffLayout> PathElementDiff<TLayout> {
-    pub fn from_nothing(path: &Path) -> Self {
-        Self::created_or_deleted(path, false)
-    }
-    pub fn to_nothing(path: &Path) -> Self {
-        Self::created_or_deleted(path, true)
-    }
-    fn created_or_deleted(path: &Path, deleted: bool) -> Self {
-        if path.symlink_metadata().is_err() {
-            return Self::Nonexistent;
-        }
-
-        match FileType::from(path) {
-            FileType::Directory => Self::Directory(if deleted {
-                TLayout::make_directory_diff(Some(path), None)
-            } else {
-                TLayout::make_directory_diff(None, Some(path))
-            }),
-            FileType::Symlink => Self::Symlink(if deleted {
-                TLayout::make_symlink_diff(Some(path), None)
-            } else {
-                TLayout::make_symlink_diff(None, Some(path))
-            }),
-            FileType::File => Self::File,
-            FileType::FilesystemBoundary => Self::FilesystemBoundary,
-            FileType::Unknown => Self::Unknown("Unknown".into()),
-        }
-    }
-}
-
-pub enum PathDiff<TLayout: DiffLayout> {
+#[derive(Clone, Debug)]
+pub enum PathDiff {
     Recreated {
-        before: PathElementDiff<TLayout>,
-        after: PathElementDiff<TLayout>,
+        state: LeftRightBoth<PathElementState>,
     },
-    Modified(PathElementDiff<TLayout>),
-    //Skipped,
+    Modified(PathElementDiff),
 }
 
-impl<TLayout: DiffLayout> Clone for PathDiff<TLayout>
-where
-    PathElementDiff<TLayout>: Clone,
-{
-    fn clone(&self) -> Self {
-        match self {
-            PathDiff::Recreated { before, after } => PathDiff::Recreated {
-                before: before.clone(),
-                after: after.clone(),
-            },
-            PathDiff::Modified(element) => PathDiff::Modified(element.clone()),
-            //PathDiff::Skipped => PathDiff::Skipped,
-        }
-    }
-}
-
-impl<TLayout: DiffLayout> PathDiff<TLayout> {
-    pub fn as_directory_diff(&self) -> Option<&TLayout::DirectoryDiff> {
+impl PathDiff {
+    pub fn as_directory_diff(&self) -> Option<&DirectoryDiff> {
         match self {
             // Cases where more directories are involved (this shouldn't ever exist )
             PathDiff::Recreated {
-                before: PathElementDiff::Directory(dir),
-                after: PathElementDiff::Directory(dir2),
+                state: LeftRightBoth::Both(_, _),
             } => unreachable!("Recreated directories should be modelled as Modified Directories"),
 
             // Cases where exactly one directory is involved
             PathDiff::Recreated {
-                before: PathElementDiff::Directory(dir),
-                after: _,
+                state: LeftRightBoth::Left(PathElementState::Directory(dir)),
             } => Some(dir),
             PathDiff::Recreated {
-                before: _,
-                after: PathElementDiff::Directory(dir),
+                state: LeftRightBoth::Right(PathElementState::Directory(dir)),
             } => Some(dir),
-            PathDiff::Modified(PathElementDiff::Directory(dir)) => Some(dir),
+            PathDiff::Modified(PathElementDiff::Directory(dir)) => match dir {
+                PathElementStateAction::Create(dir)
+                | PathElementStateAction::Delete(dir)
+                | PathElementStateAction::Modify(dir) => Some(dir),
+            },
 
             // Catch all
             PathDiff::Modified(_) => None,
-            PathDiff::Recreated {
-                before: _,
-                after: _,
-            } => None,
+            PathDiff::Recreated { state: _ } => None,
         }
     }
 }
 
-pub fn dir_diff(before: Option<&Path>, after: Option<&Path>) -> DirDiff {
-    let before = before.filter(|it| it.symlink_metadata().is_ok());
-    let after = after.filter(|it| it.symlink_metadata().is_ok());
+pub fn hashmap_diff<TKey, TVal>(
+    a: HashMap<TKey, TVal>,
+    b: HashMap<TKey, TVal>,
+) -> HashMap<TKey, LeftRightBoth<TVal>>
+where
+    TKey: Eq + Hash,
+{
+    let mut result = HashMap::new();
 
-    let mut map = HashMap::new();
-
-    //     let before_root = before_root.filter(|it| {
-    //         it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
-    //     });
-    //     let after_root = after_root.filter(|it| {
-    //         it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
-    //     });
-
-    if let Some(before) = before {
-        for entry in fs::read_dir(before).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            let rel_path = path.strip_prefix(before).unwrap();
-
-            map.insert(rel_path.to_owned(), LeftRightBoth::Left(path));
-        }
+    for (key, value) in a {
+        result.insert(key, LeftRightBoth::Left(value));
     }
-    if let Some(after) = after {
-        for entry in fs::read_dir(after).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            let rel_path = path.strip_prefix(after).unwrap();
 
-            map.entry(rel_path.to_owned())
-                .and_modify(|it| *it = it.clone().with_right(path.clone()))
-                .or_insert(LeftRightBoth::Right(path.clone()));
+    for (key, value) in b {
+        if let Some(old) = result.remove(&key) {
+            result.insert(key, old.with_right(value));
+        } else {
+            result.insert(key, LeftRightBoth::Right(value));
         }
     }
 
-    let map: HashMap<PathBuf, LeftRightBoth<PathBuf>> =
-        map.into_iter().map(|(path, entry)| (path, entry)).collect();
-
-    DirDiff { contents: map }
+    result
 }
+
+// pub fn dir_diff(before: Option<&Path>, after: Option<&Path>) -> DirDiff {
+//     let before = before.filter(|it| it.symlink_metadata().is_ok());
+//     let after = after.filter(|it| it.symlink_metadata().is_ok());
+
+//     let mut map = HashMap::new();
+
+//     //     let before_root = before_root.filter(|it| {
+//     //         it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
+//     //     });
+//     //     let after_root = after_root.filter(|it| {
+//     //         it.metadata().unwrap().dev() == it.parent().unwrap().metadata().unwrap().dev()
+//     //     });
+
+//     if let Some(before) = before {
+//         for entry in fs::read_dir(before).unwrap() {
+//             let entry = entry.unwrap();
+//             let path = entry.path();
+//             let rel_path = path.strip_prefix(before).unwrap();
+
+//             map.insert(rel_path.to_owned(), LeftRightBoth::Left(path));
+//         }
+//     }
+//     if let Some(after) = after {
+//         for entry in fs::read_dir(after).unwrap() {
+//             let entry = entry.unwrap();
+//             let path = entry.path();
+//             let rel_path = path.strip_prefix(after).unwrap();
+
+//             map.entry(rel_path.to_owned())
+//                 .and_modify(|it| *it = it.clone().with_right(path.clone()))
+//                 .or_insert(LeftRightBoth::Right(path.clone()));
+//         }
+//     }
+
+//     let map: HashMap<PathBuf, LeftRightBoth<PathBuf>> =
+//         map.into_iter().map(|(path, entry)| (path, entry)).collect();
+
+//     DirDiff { contents: map }
+// }
 
 pub enum FileType {
     Symlink,
@@ -221,51 +200,6 @@ impl From<&Path> for FileType {
         } else {
             FileType::FilesystemBoundary
         }
-    }
-}
-
-pub fn path_diff<TLayout: DiffLayout>(before: &Path, after: &Path) -> PathDiff<TLayout> {
-    let before_t = before
-        .symlink_metadata()
-        .is_ok()
-        .then(|| FileType::from(before));
-    let after_t = after
-        .symlink_metadata()
-        .is_ok()
-        .then(|| FileType::from(after));
-
-    match (before_t, after_t) {
-        //TODO This case is eww
-        (None, None) => PathDiff::Modified(PathElementDiff::Nonexistent),
-
-        (None, Some(after_ft)) => PathDiff::Recreated {
-            before: PathElementDiff::Nonexistent,
-            after: PathElementDiff::from_nothing(&after),
-        },
-        (Some(before_ft), None) => PathDiff::Recreated {
-            before: PathElementDiff::to_nothing(&before),
-            after: PathElementDiff::Nonexistent,
-        },
-
-        (Some(before_ft), Some(after_ft)) => match (before_ft, after_ft) {
-            (FileType::Symlink, FileType::Symlink) => PathDiff::Modified(PathElementDiff::Symlink(
-                TLayout::make_symlink_diff(Some(before), Some(after)),
-            )),
-            (FileType::File, FileType::File) => PathDiff::Modified(PathElementDiff::File),
-            (FileType::Directory, FileType::Directory) => PathDiff::Modified(
-                PathElementDiff::Directory(TLayout::make_directory_diff(Some(before), Some(after))),
-            ),
-            (FileType::FilesystemBoundary, FileType::FilesystemBoundary) => {
-                PathDiff::Modified(PathElementDiff::FilesystemBoundary)
-            }
-            (FileType::Unknown, FileType::Unknown) => {
-                PathDiff::Modified(PathElementDiff::Unknown("Unknown".into()))
-            }
-            (a, b) => PathDiff::Recreated {
-                before: PathElementDiff::to_nothing(before),
-                after: PathElementDiff::from_nothing(after),
-            },
-        },
     }
 }
 
@@ -303,4 +237,281 @@ impl<T> LeftRightBoth<T> {
             LeftRightBoth::Both(l, r) => LeftRightBoth::Both(f(l), f(r)),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SymlinkState {
+    Link {
+        target: PathBuf,
+        broken: bool,
+    },
+    NixStoreLink {
+        target: PathBuf,
+        hash: String,
+        path_within_derivation: String,
+    },
+}
+
+impl SymlinkState {
+    pub fn target(&self) -> &PathBuf {
+        match self {
+            SymlinkState::Link { target, .. } => target,
+            SymlinkState::NixStoreLink { target, .. } => target,
+        }
+    }
+}
+
+impl From<&SymlinkPath> for SymlinkState {
+    fn from(value: &SymlinkPath) -> Self {
+        let target = value.target();
+
+        if let Ok(nix_path) = target.strip_prefix("/nix/store")
+            && let Some((hash, path_within_derivation)) =
+                nix_path.display().to_string().split_once("-")
+        {
+            Self::NixStoreLink {
+                target,
+                hash: hash.to_string(),
+                path_within_derivation: path_within_derivation.to_string(),
+            }
+        } else {
+            Self::Link {
+                broken: target.exists(),
+                target,
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SymlinkDiff {
+    Different {
+        before: PathBuf,
+        after: PathBuf,
+    },
+    Identical {
+        target: PathBuf,
+    },
+    IdenticalInNix {
+        target: PathBuf,
+    },
+    DifferentInNix {
+        before: PathBuf,
+        after: PathBuf,
+    },
+    NixGenerationChanged {
+        path_within_derivation: String,
+        before: String,
+        after: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DirectoryDiff {
+    pub entries: Vec<(PathBuf, LeftRightBoth<PathBuf>)>,
+    pub contains_meaningful_changes: bool,
+}
+
+pub struct DiffCache {
+    pub diffs: HashMap<PathBuf, PathDiff>,
+
+    pub before: PathBuf,
+    pub after: PathBuf,
+}
+
+impl DiffCache {
+    pub fn new(before: &Path, after: &Path) -> Self {
+        Self {
+            diffs: HashMap::new(),
+            before: before.to_path_buf(),
+            after: after.to_path_buf(),
+        }
+    }
+
+    pub fn get_diff(&mut self, location: PathBuf) -> &PathDiff {
+        //TODO This is a lifetime mess, but it don't think i can solve it before polonius hits
+        if !self.diffs.contains_key(&location) {
+            let new = self.calculate_diff(&location);
+            self.diffs.insert(location.clone(), new);
+        }
+        self.diffs
+            .get(&location)
+            .expect("We literally just inserted it.")
+    }
+
+    fn calculate_diff(&mut self, location: &PathBuf) -> PathDiff {
+        let before = self.before.join(location);
+        let after = self.after.join(location);
+
+        let before_t = ExistentPath::try_from(before).ok().map(TypedPath::from);
+        let after_t = ExistentPath::try_from(after).ok().map(TypedPath::from);
+
+        match (before_t, after_t) {
+            //TODO This case is eww
+            (None, None) => PathDiff::Modified(PathElementDiff::Nonexistent),
+
+            (None, Some(after_ft)) => PathDiff::Recreated {
+                state: LeftRightBoth::Right(self.from_nothing(location, &after_ft)),
+            },
+            (Some(before_ft), None) => PathDiff::Recreated {
+                state: LeftRightBoth::Left(self.to_nothing(location, &before_ft)),
+            },
+
+            (Some(before_ft), Some(after_ft)) => match (before_ft, after_ft) {
+                (TypedPath::Symlink(before_ft), TypedPath::Symlink(after_ft)) => {
+                    PathDiff::Modified(PathElementDiff::Symlink(PathElementStateAction::Modify(
+                        self.make_symlink_diff(&before_ft, &after_ft),
+                    )))
+                }
+                (TypedPath::File(_), TypedPath::File(_)) => {
+                    PathDiff::Modified(PathElementDiff::File)
+                }
+                (TypedPath::Directory(before), TypedPath::Directory(after)) => {
+                    PathDiff::Modified(PathElementDiff::Directory(PathElementStateAction::Modify(
+                        self.make_directory_diff(location, Some(&before), Some(&after)),
+                    )))
+                }
+                (TypedPath::FilesystemBoundary(_), TypedPath::FilesystemBoundary(_)) => {
+                    PathDiff::Modified(PathElementDiff::FilesystemBoundary)
+                }
+                (TypedPath::Unknown(_), TypedPath::Unknown(_)) => {
+                    PathDiff::Modified(PathElementDiff::Unknown("Unknown".into()))
+                }
+                (before, after) => PathDiff::Recreated {
+                    state: LeftRightBoth::Both(
+                        self.to_nothing(location, &before),
+                        self.from_nothing(location, &after),
+                    ),
+                },
+            },
+        }
+    }
+
+    fn make_directory_diff(
+        &mut self,
+        location: &Path,
+        before: Option<&DirectoryPath>,
+        after: Option<&DirectoryPath>,
+    ) -> DirectoryDiff {
+        let diff = {
+            let before_map = before
+                .map(|dir| {
+                    dir.read_dir()
+                        .map(|entry| {
+                            let entry = entry.unwrap();
+                            let path = entry.path();
+                            let rel_path = path.strip_prefix(&self.before).unwrap();
+
+                            (rel_path.to_owned(), path)
+                        })
+                        .collect::<HashMap<_, _>>()
+                })
+                .unwrap_or_default();
+
+            let after_map = after
+                .map(|dir| {
+                    dir.read_dir()
+                        .map(|entry| {
+                            let entry = entry.unwrap();
+                            let path = entry.path();
+                            let rel_path = path.strip_prefix(&self.after).unwrap();
+
+                            (rel_path.to_owned(), path)
+                        })
+                        .collect::<HashMap<_, _>>()
+                })
+                .unwrap_or_default();
+
+            hashmap_diff(before_map, after_map)
+        };
+        let mut items = diff.into_iter().collect::<Vec<_>>();
+        items.sort_by_cached_key(|it| it.0.clone());
+
+        let contains_meaningful_changes = items.iter().any(|(child_path, _)| {
+            let child_diff = self.get_diff(location.join(child_path));
+            //If child_diff has meaningful changes, break
+            true
+        });
+
+        DirectoryDiff {
+            entries: items,
+            contains_meaningful_changes,
+        }
+    }
+
+    fn make_symlink_diff(&mut self, before: &SymlinkPath, after: &SymlinkPath) -> SymlinkDiff {
+        let before_target = before.target();
+        let after_target = after.target();
+
+        if let Ok(before_nix_path) = before_target.strip_prefix("/nix/store")
+            && let Some((before_hash, before_path)) =
+                before_nix_path.display().to_string().split_once("-")
+            && let Ok(after_nix_path) = after_target.strip_prefix("/nix/store")
+            && let Some((after_hash, after_path)) =
+                after_nix_path.display().to_string().split_once("-")
+        {
+            if before_path == after_path {
+                if before_hash == after_hash {
+                    return SymlinkDiff::IdenticalInNix {
+                        target: before_target.clone(),
+                    };
+                } else {
+                    return SymlinkDiff::NixGenerationChanged {
+                        path_within_derivation: before_path.to_string(),
+                        before: before_hash.to_owned(),
+                        after: after_hash.to_owned(),
+                    };
+                }
+            } else {
+                return SymlinkDiff::DifferentInNix {
+                    before: PathBuf::from(before_nix_path),
+                    after: PathBuf::from(after_nix_path),
+                };
+            }
+        }
+
+        if before_target == after_target {
+            return SymlinkDiff::Identical {
+                target: before_target,
+            };
+        }
+
+        SymlinkDiff::Different {
+            before: before_target,
+            after: after_target,
+        }
+    }
+
+    fn from_nothing(&mut self, location: &Path, path: &TypedPath) -> PathElementState {
+        self.created_or_deleted(location, path, false)
+    }
+    fn to_nothing(&mut self, location: &Path, path: &TypedPath) -> PathElementState {
+        self.created_or_deleted(location, path, true)
+    }
+    fn created_or_deleted(
+        &mut self,
+        location: &Path,
+        path: &TypedPath,
+        deleted: bool,
+    ) -> PathElementState {
+        match path {
+            TypedPath::Directory(dir_path) => PathElementState::Directory(if deleted {
+                self.make_directory_diff(location, Some(dir_path), None)
+            } else {
+                self.make_directory_diff(location, None, Some(dir_path))
+            }),
+            TypedPath::Symlink(symlink_path) => {
+                PathElementState::Symlink(SymlinkState::from(symlink_path))
+            }
+            TypedPath::File(_) => PathElementState::File,
+            TypedPath::FilesystemBoundary(_) => PathElementState::FilesystemBoundary,
+            TypedPath::Unknown(_) => PathElementState::Unknown("Unknown".into()),
+        }
+    }
+}
+
+pub struct DiffCacheLayout;
+impl DiffLayout for DiffCacheLayout {
+    type DirectoryDiff = DirectoryDiff;
+    type SymlinkDiff = SymlinkDiff;
 }

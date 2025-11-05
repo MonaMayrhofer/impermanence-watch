@@ -27,7 +27,8 @@ use ratatui::{
 
 use crate::{
     dir_diff::{
-        self, DiffLayout, DirDiff, FileType, LeftRightBoth, PathDiff, PathElementDiff, path_diff,
+        self, DiffCache, DiffCacheLayout, DiffLayout, FileType, LeftRightBoth, PathDiff,
+        PathElementDiff, PathElementState, SymlinkDiff,
     },
     tui::nav_list::{NavList, NavListAdapter, NavListItem, NavListState},
 };
@@ -68,115 +69,6 @@ pub fn tui() -> Result<()> {
     res
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SymlinkDiff {
-    Different {
-        before: Option<PathBuf>,
-        after: Option<PathBuf>,
-    },
-    Identical {
-        target: Option<PathBuf>,
-    },
-    IdenticalInNix {
-        target: PathBuf,
-    },
-    DifferentInNix {
-        before: PathBuf,
-        after: PathBuf,
-    },
-    NixGenerationChanged {
-        path_within_derivation: String,
-        before: String,
-        after: String,
-    },
-}
-
-pub struct DiffCacheLayout;
-impl DiffLayout for DiffCacheLayout {
-    type DirectoryDiff = Vec<(PathBuf, LeftRightBoth<PathBuf>)>;
-
-    fn make_directory_diff(before: Option<&Path>, after: Option<&Path>) -> Self::DirectoryDiff {
-        let diff = dir_diff::dir_diff(before, after);
-        let mut items = diff
-            .contents
-            .iter()
-            .map(|(path, diff)| {
-                let path = path.clone();
-                let diff = diff.clone();
-                (path, diff)
-            })
-            .collect::<Vec<_>>();
-        items.sort_by_cached_key(|it| it.0.clone());
-        items
-    }
-
-    type SymlinkDiff = SymlinkDiff;
-
-    fn make_symlink_diff(before: Option<&Path>, after: Option<&Path>) -> Self::SymlinkDiff {
-        let before = before.filter(|it| it.symlink_metadata().is_ok() && it.is_symlink());
-        let after = after.filter(|it| it.symlink_metadata().is_ok() && it.is_symlink());
-        let before_target = before.and_then(|it| std::fs::read_link(it).ok());
-        let after_target = after.and_then(|it| std::fs::read_link(it).ok());
-
-        if let Some(before_target) = &before_target
-            && let Ok(before_nix_path) = before_target.strip_prefix("/nix/store")
-            && let Some((before_hash, before_path)) =
-                before_nix_path.display().to_string().split_once("-")
-            && let Some(after_target) = &after_target
-            && let Ok(after_nix_path) = after_target.strip_prefix("/nix/store")
-            && let Some((after_hash, after_path)) =
-                after_nix_path.display().to_string().split_once("-")
-        {
-            if before_path == after_path {
-                if before_hash == after_hash {
-                    return SymlinkDiff::IdenticalInNix {
-                        target: before_target.clone(),
-                    };
-                } else {
-                    return SymlinkDiff::NixGenerationChanged {
-                        path_within_derivation: before_path.to_string(),
-                        before: before_hash.to_owned(),
-                        after: after_hash.to_owned(),
-                    };
-                }
-            } else {
-                return SymlinkDiff::DifferentInNix {
-                    before: PathBuf::from(before_nix_path),
-                    after: PathBuf::from(after_nix_path),
-                };
-            }
-        }
-
-        if before_target == after_target {
-            return SymlinkDiff::Identical {
-                target: before_target,
-            };
-        }
-
-        SymlinkDiff::Different {
-            before: before_target,
-            after: after_target,
-        }
-    }
-}
-
-pub struct DiffCache {
-    pub diffs: HashMap<PathBuf, PathDiff<DiffCacheLayout>>,
-    pub before: PathBuf,
-    pub after: PathBuf,
-}
-
-impl DiffCache {
-    fn get_diff(&mut self, location: PathBuf) -> &PathDiff<DiffCacheLayout> {
-        self.diffs.entry(location.clone()).or_insert_with(|| {
-            let before = self.before.join(&location);
-            let after = self.after.join(&location);
-
-            path_diff(&before, &after)
-        })
-    }
-}
-
 enum EntryState {
     Created,
     Deleted,
@@ -185,13 +77,7 @@ enum EntryState {
     Unimportant,
 }
 
-fn display_diff(
-    path: &Path,
-    diff: &PathElementDiff<DiffCacheLayout>,
-    state: EntryState,
-) -> Text<'static> {
-    tracing::info!("{:?} {:?}", &path, &diff);
-
+fn display_diff(path: &Path, diff: &PathElementDiff, state: EntryState) -> Text<'static> {
     let entry_style = match state {
         EntryState::Created => Style::new().green(),
         EntryState::Deleted => Style::new().red(),
@@ -206,38 +92,48 @@ fn display_diff(
         }
         PathElementDiff::File => Text::from(format!(" {}", path.display())).style(entry_style),
         PathElementDiff::Symlink(diff) => match diff {
-            SymlinkDiff::Different { before, after } => Text::from(Line::from(vec![
-                Span::from(format!(" {}", path.display())),
-                Span::from(" -> ???"),
-            ]))
-            .yellow(),
-            SymlinkDiff::Identical { target } => Text::from(Line::from(vec![
-                Span::from(format!(" {}", path.display())),
-                Span::from(format!(" -> {}", target.as_ref().unwrap().display())),
-            ]))
-            .dark_gray(),
-            SymlinkDiff::IdenticalInNix { target } => Text::from(Line::from(vec![
-                Span::from(format!(" {}", path.display())),
-                Span::from(format!(" -> Nix: {}", target.display())),
-            ]))
-            .dark_gray(),
-            SymlinkDiff::DifferentInNix { before, after } => Text::from(Line::from(vec![
-                Span::from(format!(" {}", path.display())),
-                Span::from(format!(" -> Nix: ???")),
-            ]))
-            .yellow(),
-            SymlinkDiff::NixGenerationChanged {
-                before,
-                after,
-                path_within_derivation,
-            } => Text::from(Line::from(vec![
-                Span::from(format!(" {}", path.display())),
-                Span::from(" -> /nix/store/"),
-                Span::from("???").yellow(),
-                Span::from("-"),
-                Span::from(path_within_derivation.to_string()),
-            ]))
-            .dark_gray(),
+            dir_diff::PathElementStateAction::Create(diff) => {
+                Text::from(format!(" {}", diff.target().display()))
+                    .style(entry_style)
+                    .green()
+            }
+            dir_diff::PathElementStateAction::Delete(diff) => {
+                Text::from(format!(" {}", diff.target().display()))
+                    .style(entry_style)
+                    .red()
+            }
+            dir_diff::PathElementStateAction::Modify(diff) => match diff {
+                SymlinkDiff::Different { before, after } => Text::from(Line::from(vec![
+                    Span::from(format!(" {}", path.display())),
+                    Span::from(" -> ???"),
+                ]))
+                .yellow(),
+
+                SymlinkDiff::IdenticalInNix { target } | SymlinkDiff::Identical { target } => {
+                    Text::from(Line::from(vec![
+                        Span::from(format!(" {}", path.display())),
+                        Span::from(format!(" -> {}", target.display())),
+                    ]))
+                    .dark_gray()
+                }
+                SymlinkDiff::DifferentInNix { before, after } => Text::from(Line::from(vec![
+                    Span::from(format!(" {}", path.display())),
+                    Span::from(format!(" -> Nix: ???")),
+                ]))
+                .yellow(),
+                SymlinkDiff::NixGenerationChanged {
+                    before,
+                    after,
+                    path_within_derivation,
+                } => Text::from(Line::from(vec![
+                    Span::from(format!(" {}", path.display())),
+                    Span::from(" -> /nix/store/"),
+                    Span::from("???").yellow(),
+                    Span::from("-"),
+                    Span::from(path_within_derivation.to_string()),
+                ]))
+                .dark_gray(),
+            },
         },
         PathElementDiff::Nonexistent => {
             Text::from(format!(" {}", path.display())).style(entry_style)
@@ -262,23 +158,25 @@ impl NavListAdapter for DiffCache {
 
         if let Some(dir) = diff.as_directory_diff() {
             let items = dir
+                .entries
                 .clone()
                 .into_iter()
                 .flat_map(|(rel_path, _)| {
                     let child_diff = self.get_diff(location.join(&rel_path));
+
                     let sub_location = Some(rel_path.clone());
 
                     match child_diff {
-                        PathDiff::Recreated { before, after } => match (before, after) {
-                            (
-                                diff_before @ PathElementDiff::Directory(before_dir),
-                                diff_after @ PathElementDiff::FilesystemBoundary,
-                            ) => {
-                                if before_dir.is_empty() {
+                        PathDiff::Recreated { state } => match (state) {
+                            (LeftRightBoth::Both(
+                                diff_before @ PathElementState::Directory(before_dir),
+                                diff_after @ PathElementState::FilesystemBoundary,
+                            )) => {
+                                if before_dir.entries.is_empty() {
                                     vec![NavListItem {
                                         text: display_diff(
                                             &rel_path,
-                                            diff_after,
+                                            &PathElementDiff::create(diff_after.clone()),
                                             EntryState::Unimportant,
                                         ),
                                         sub_location: sub_location.clone(),
@@ -288,7 +186,7 @@ impl NavListAdapter for DiffCache {
                                         NavListItem {
                                             text: display_diff(
                                                 &rel_path,
-                                                diff_before,
+                                                &PathElementDiff::delete(diff_before.clone()),
                                                 EntryState::Deleted,
                                             ),
                                             sub_location: sub_location.clone(),
@@ -296,7 +194,7 @@ impl NavListAdapter for DiffCache {
                                         NavListItem {
                                             text: display_diff(
                                                 &rel_path,
-                                                diff_after,
+                                                &PathElementDiff::create(diff_after.clone()),
                                                 EntryState::Created,
                                             ),
                                             sub_location: sub_location.clone(),
@@ -304,25 +202,46 @@ impl NavListAdapter for DiffCache {
                                     ]
                                 }
                             }
-                            (before, after) => {
-                                let mut vec = Vec::new();
-                                match before {
-                                    PathElementDiff::Nonexistent => {}
-                                    diff => vec.push(NavListItem {
-                                        text: display_diff(&rel_path, diff, EntryState::Deleted),
+                            LeftRightBoth::Both(before, after) => {
+                                vec![
+                                    (NavListItem {
+                                        text: display_diff(
+                                            &rel_path,
+                                            &PathElementDiff::delete(before.clone()),
+                                            EntryState::Deleted,
+                                        ),
                                         sub_location: sub_location.clone(),
                                     }),
-                                }
-
-                                match after {
-                                    PathElementDiff::Nonexistent => {}
-                                    diff => vec.push(NavListItem {
-                                        text: display_diff(&rel_path, diff, EntryState::Created),
+                                    (NavListItem {
+                                        text: display_diff(
+                                            &rel_path,
+                                            &PathElementDiff::create(after.clone()),
+                                            EntryState::Created,
+                                        ),
                                         sub_location: sub_location.clone(),
                                     }),
-                                }
-                                vec
+                                ]
                             }
+                            LeftRightBoth::Left(before) => vec![
+                                (NavListItem {
+                                    text: display_diff(
+                                        &rel_path,
+                                        &PathElementDiff::delete(before.clone()),
+                                        EntryState::Deleted,
+                                    ),
+                                    sub_location: sub_location.clone(),
+                                }),
+                            ],
+                            LeftRightBoth::Right(after) => vec![
+                                (NavListItem {
+                                    text: display_diff(
+                                        &rel_path,
+                                        &PathElementDiff::create(after.clone()),
+                                        EntryState::Created,
+                                    ),
+                                    sub_location: sub_location.clone(),
+                                }),
+                            ],
                         },
                         PathDiff::Modified(path_element_diff) => {
                             vec![NavListItem {
@@ -351,7 +270,7 @@ impl NavListAdapter for DiffCache {
         let diff = self.get_diff(location.clone()).as_directory_diff()?;
 
         if let Some(prev) = previous_sub_location {
-            let iter = diff.iter();
+            let iter = diff.entries.iter();
             let mut iter = iter.skip_while(|(it, _)| prev != it);
 
             if let Some((current, _)) = iter.next() {
@@ -361,10 +280,10 @@ impl NavListAdapter for DiffCache {
                     Some(current.clone())
                 }
             } else {
-                diff.first().map(|(path, _)| path.clone())
+                diff.entries.first().map(|(path, _)| path.clone())
             }
         } else {
-            diff.first().map(|(path, _)| path.clone())
+            diff.entries.first().map(|(path, _)| path.clone())
         }
     }
 
@@ -376,7 +295,7 @@ impl NavListAdapter for DiffCache {
         let diff = self.get_diff(location.clone()).as_directory_diff()?;
 
         if let Some(prev) = &next_sub_location {
-            let iter = diff.iter().rev();
+            let iter = diff.entries.iter().rev();
             let mut iter = iter.skip_while(|(it, _)| prev != &it);
 
             if let Some((current, _)) = iter.next() {
@@ -386,10 +305,10 @@ impl NavListAdapter for DiffCache {
                     Some(current.clone())
                 }
             } else {
-                diff.last().map(|(path, _)| path.clone())
+                diff.entries.last().map(|(path, _)| path.clone())
             }
         } else {
-            diff.last().map(|(path, _)| path.clone())
+            diff.entries.last().map(|(path, _)| path.clone())
         }
     }
 }
@@ -448,25 +367,70 @@ impl App {
     }
 
     fn display_path(&mut self, path: PathBuf, frame: &mut Frame, area: Rect) {
-        let diff = self.diff_cache.get_diff(path.clone());
-        match diff.clone() {
+        let diff: PathDiff = self.diff_cache.get_diff(path.clone()).clone();
+        match diff {
             //TODO This clone shows a fundamental flaw with the current design. Get rid of it
-            PathDiff::Recreated { before, after } => {
+            PathDiff::Recreated {
+                state: LeftRightBoth::Both(before, after),
+            } => {
                 let [top, bottom] =
                     Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
                         .areas(area);
 
-                self.display_element_diff(path.clone(), before, frame, top);
-                self.display_element_diff(path.clone(), after, frame, bottom);
+                self.display_element_diff(
+                    path.clone(),
+                    PathElementDiff::delete(before.clone()),
+                    frame,
+                    top,
+                );
+                self.display_element_diff(
+                    path.clone(),
+                    PathElementDiff::create(after.clone()),
+                    frame,
+                    bottom,
+                );
             }
-            PathDiff::Modified(element) => self.display_element_diff(path, element, frame, area),
+
+            PathDiff::Recreated {
+                state: LeftRightBoth::Left(before),
+            } => {
+                let [top, bottom] =
+                    Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
+                        .areas(area);
+
+                self.display_element_diff(
+                    path.clone(),
+                    PathElementDiff::delete(before.clone()),
+                    frame,
+                    top,
+                );
+            }
+
+            PathDiff::Recreated {
+                state: LeftRightBoth::Right(after),
+            } => {
+                let [top, bottom] =
+                    Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)])
+                        .areas(area);
+
+                self.display_element_diff(
+                    path.clone(),
+                    PathElementDiff::create(after.clone()),
+                    frame,
+                    bottom,
+                );
+            }
+
+            PathDiff::Modified(element) => {
+                self.display_element_diff(path, element.clone(), frame, area)
+            }
         }
     }
 
     fn display_element_diff(
         &mut self,
         path: PathBuf,
-        element: PathElementDiff<DiffCacheLayout>,
+        element: PathElementDiff,
         frame: &mut Frame,
         area: Rect,
     ) {
@@ -476,75 +440,67 @@ impl App {
                 let navlist = NavList::new(&mut self.diff_cache, &path);
                 frame.render_stateful_widget(navlist, area, state);
             }
-            PathElementDiff::Symlink(link_diff) => {
-                match link_diff {
-                    SymlinkDiff::Different { before, after } => {
-                        let text = Text::from(vec![
-                            Line::from(
-                                before
-                                    .map(|it| it.display().to_string())
-                                    .unwrap_or_else(|| "Nonexistent".to_string()),
-                            ),
-                            Line::from(
-                                after
-                                    .map(|it| it.display().to_string())
-                                    .unwrap_or_else(|| "Nonexistent".to_string()),
-                            ),
-                        ]);
-                        let paragraph =
-                            Paragraph::new(text).block(Block::bordered().title("Symlink Changed"));
-                        frame.render_widget(paragraph, area);
-                    }
-                    SymlinkDiff::Identical { target } => {
-                        let text = Text::from(vec![Line::from(
-                            target
-                                .map(|it| it.display().to_string())
-                                .unwrap_or_else(|| "Nonexistent".to_string()),
-                        )]);
-                        let paragraph = Paragraph::new(text)
-                            .block(Block::bordered().title("Symlink Identical"));
-                        frame.render_widget(paragraph, area);
-                    }
-                    SymlinkDiff::IdenticalInNix { target } => {
-                        let text = Text::from(vec![Line::from(target.display().to_string())]);
-                        let paragraph = Paragraph::new(text)
-                            .block(Block::bordered().title("Symlink Identical"));
-                        frame.render_widget(paragraph, area);
-                    }
-                    SymlinkDiff::DifferentInNix { before, after } => {
-                        let text = Text::from(vec![
-                            Line::from(before.display().to_string()),
-                            Line::from(after.display().to_string()),
-                        ]);
-                        let paragraph =
-                            Paragraph::new(text).block(Block::bordered().title("Symlink Changed"));
-                        frame.render_widget(paragraph, area);
-                    }
-                    SymlinkDiff::NixGenerationChanged {
-                        path_within_derivation,
-                        before,
-                        after,
-                    } => {
-                        let text = Text::from(vec![
-                            Line::from(vec![
-                                Span::from("/nix/store/").dark_gray(),
-                                Span::from(before).red(),
-                                Span::from("-").dark_gray(),
-                                Span::from(path_within_derivation.clone()).dark_gray(),
-                            ]),
-                            Line::from(vec![
-                                Span::from("/nix/store/").dark_gray(),
-                                Span::from(after).green(),
-                                Span::from("-").dark_gray(),
-                                Span::from(path_within_derivation).dark_gray(),
-                            ]),
-                        ]);
-                        let paragraph = Paragraph::new(text)
-                            .block(Block::bordered().title("Nix-Symlink Generation Changed"));
-                        frame.render_widget(paragraph, area);
-                    }
-                };
-            }
+            PathElementDiff::Symlink(link_diff) => match link_diff {
+                dir_diff::PathElementStateAction::Create(_) => todo!(),
+                dir_diff::PathElementStateAction::Delete(_) => todo!(),
+                dir_diff::PathElementStateAction::Modify(link_diff) => {
+                    match link_diff {
+                        SymlinkDiff::Different { before, after } => {
+                            let text = Text::from(vec![
+                                Line::from(before.display().to_string()),
+                                Line::from(after.display().to_string()),
+                            ]);
+                            let paragraph = Paragraph::new(text)
+                                .block(Block::bordered().title("Symlink Changed"));
+                            frame.render_widget(paragraph, area);
+                        }
+                        SymlinkDiff::Identical { target } => {
+                            let text = Text::from(vec![Line::from(target.display().to_string())]);
+                            let paragraph = Paragraph::new(text)
+                                .block(Block::bordered().title("Symlink Identical"));
+                            frame.render_widget(paragraph, area);
+                        }
+                        SymlinkDiff::IdenticalInNix { target } => {
+                            let text = Text::from(vec![Line::from(target.display().to_string())]);
+                            let paragraph = Paragraph::new(text)
+                                .block(Block::bordered().title("Symlink Identical"));
+                            frame.render_widget(paragraph, area);
+                        }
+                        SymlinkDiff::DifferentInNix { before, after } => {
+                            let text = Text::from(vec![
+                                Line::from(before.display().to_string()),
+                                Line::from(after.display().to_string()),
+                            ]);
+                            let paragraph = Paragraph::new(text)
+                                .block(Block::bordered().title("Symlink Changed"));
+                            frame.render_widget(paragraph, area);
+                        }
+                        SymlinkDiff::NixGenerationChanged {
+                            path_within_derivation,
+                            before,
+                            after,
+                        } => {
+                            let text = Text::from(vec![
+                                Line::from(vec![
+                                    Span::from("/nix/store/").dark_gray(),
+                                    Span::from(before).red(),
+                                    Span::from("-").dark_gray(),
+                                    Span::from(path_within_derivation.clone()).dark_gray(),
+                                ]),
+                                Line::from(vec![
+                                    Span::from("/nix/store/").dark_gray(),
+                                    Span::from(after).green(),
+                                    Span::from("-").dark_gray(),
+                                    Span::from(path_within_derivation).dark_gray(),
+                                ]),
+                            ]);
+                            let paragraph = Paragraph::new(text)
+                                .block(Block::bordered().title("Nix-Symlink Generation Changed"));
+                            frame.render_widget(paragraph, area);
+                        }
+                    };
+                }
+            },
             PathElementDiff::File => {
                 let text = Text::from(vec![Line::from("File")]);
                 let paragraph = Paragraph::new(text).block(Block::bordered().title("File"));
