@@ -23,9 +23,9 @@ use ratatui::{
 
 use crate::{
     assesser::{AssessedAction, Assessment, AssessmentGrade},
-    dir_diff::{DiffCache, DirectoryDiff, FileType, PathElementDiff, PathElementState},
+    dir_diff::{Differ, DirectoryDiff, TypedPathDiff, TypedPathState},
     tui::nav_list::{NavList, NavListAdapter, NavListItem, NavListState},
-    typed_actions::{Action, Typed},
+    typed_actions::{Action, FileType, Typed},
 };
 
 pub(crate) fn tui() -> Result<()> {
@@ -121,34 +121,34 @@ impl AsDirDiff for AssessedAction {
     fn as_directory_diff(&self) -> Option<&DirectoryDiff> {
         match self {
             AssessedAction::Created(path_element_state) => match path_element_state {
-                PathElementState::Directory(directory_diff) => Some(directory_diff),
+                TypedPathState::Directory(directory_diff) => Some(directory_diff),
                 _ => None,
             },
             AssessedAction::Deleted(path_element_state) => match path_element_state {
-                PathElementState::Directory(directory_diff) => Some(directory_diff),
+                TypedPathState::Directory(directory_diff) => Some(directory_diff),
                 _ => None,
             },
 
             AssessedAction::Modified(path_element_diff) => match path_element_diff {
-                PathElementDiff::Directory(directory_diff) => Some(directory_diff),
+                TypedPathDiff::Directory(directory_diff) => Some(directory_diff),
                 _ => None,
             },
             AssessedAction::Identical(path_element_state) => match path_element_state {
-                PathElementState::Directory(directory_diff) => Some(directory_diff),
+                TypedPathState::Directory(directory_diff) => Some(directory_diff),
                 _ => None,
             },
         }
     }
 }
 
-impl NavListAdapter for DiffCache {
+impl NavListAdapter for Differ {
     type Location = PathBuf;
 
     fn get_items(
         &mut self,
         location: &Self::Location,
     ) -> Option<Vec<NavListItem<'_, Self::Location>>> {
-        let diff = self.get_diff(location.clone())?;
+        let diff = self.get_diff(location)?;
         let directory_diff = diff.as_directory_diff();
 
         if let Some(dir) = directory_diff {
@@ -159,7 +159,7 @@ impl NavListAdapter for DiffCache {
                 .flat_map(|(rel_path, _)| {
                     // We could also just return vec![] here, but lets have it this way to catch bugs
                     let child_diff = self
-                        .get_diff(location.join(&rel_path))
+                        .get_diff(&location.join(&rel_path))
                         .expect("Child diffs of a dir should always exist");
 
                     child_diff
@@ -185,7 +185,7 @@ impl NavListAdapter for DiffCache {
         location: &Self::Location,
         previous_sub_location: Option<&Self::Location>,
     ) -> Option<Self::Location> {
-        let diff = self.get_diff(location.clone())?;
+        let diff = self.get_diff(&location.clone())?;
         let diff = diff.as_directory_diff()?;
 
         if let Some(prev) = previous_sub_location {
@@ -211,7 +211,7 @@ impl NavListAdapter for DiffCache {
         location: &Self::Location,
         next_sub_location: Option<&'a Self::Location>,
     ) -> Option<Self::Location> {
-        let diff = self.get_diff(location.clone())?;
+        let diff = self.get_diff(&location.clone())?;
         let diff = diff.as_directory_diff()?;
 
         if let Some(prev) = &next_sub_location {
@@ -237,7 +237,7 @@ struct App {
     path: PathBuf,
 
     nav_list_states: HashMap<PathBuf, NavListState<PathBuf>>,
-    diff_cache: DiffCache,
+    diff_cache: Differ,
 }
 
 impl App {
@@ -247,11 +247,11 @@ impl App {
         //     Path::new("/home/nionidh").to_owned(),
         // );
         let initial_path = PathBuf::new();
-        let diff_cache = DiffCache {
-            diffs: HashMap::new(),
-            before: Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/")
+        let diff_cache = Differ {
+            assessment_cache: HashMap::new(),
+            before_root: Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/")
                 .to_owned(),
-            after: Path::new("/home/nionidh").to_owned(),
+            after_root: Path::new("/home/nionidh").to_owned(),
         };
 
         Self {
@@ -285,7 +285,7 @@ impl App {
     }
 
     fn display_path(&mut self, path: PathBuf, frame: &mut Frame, area: Rect) {
-        let Some(diff) = self.diff_cache.get_diff(path.clone()) else {
+        let Some(diff) = self.diff_cache.get_diff(&path.clone()) else {
             return;
         };
 
@@ -325,7 +325,7 @@ impl App {
         fn render_state(
             app: &mut App,
             path: PathBuf,
-            state: &PathElementState,
+            state: &TypedPathState,
             tag: ActionTag,
             frame: &mut Frame,
             area: Rect,
@@ -343,14 +343,8 @@ impl App {
                     let paragraph = Paragraph::new(text).block(block.title("Symlink"));
                     frame.render_widget(paragraph, area);
                 }
-                Typed::Directory(_) => {
-                    let state = app.nav_list_states.entry(path.clone()).or_default();
-                    let navlist = NavList::new(
-                        &mut app.diff_cache,
-                        &path,
-                        block.title(path.display().to_string()),
-                    );
-                    frame.render_stateful_widget(navlist, area, state);
+                Typed::Directory(dir) => {
+                    render_directory_diff(app, path, dir, frame, area, block);
                 }
                 Typed::File(_) => {
                     let text = Text::from(vec![]);
@@ -373,7 +367,7 @@ impl App {
         fn render_diff(
             app: &mut App,
             path: PathBuf,
-            diff: &PathElementDiff,
+            diff: &TypedPathDiff,
             frame: &mut Frame,
             area: Rect,
         ) {
@@ -387,14 +381,8 @@ impl App {
                     let paragraph = Paragraph::new(text).block(block.title("Symlink changed"));
                     frame.render_widget(paragraph, area);
                 }
-                Typed::Directory(_) => {
-                    let state = app.nav_list_states.entry(path.clone()).or_default();
-                    let navlist = NavList::new(
-                        &mut app.diff_cache,
-                        &path,
-                        block.title(path.display().to_string()),
-                    );
-                    frame.render_stateful_widget(navlist, area, state);
+                Typed::Directory(dir) => {
+                    render_directory_diff(app, path, dir, frame, area, block);
                 }
                 Typed::File(_) => {
                     let text = Text::from(vec![
@@ -418,6 +406,33 @@ impl App {
                     frame.render_widget(paragraph, area);
                 }
             };
+        }
+
+        fn render_directory_diff(
+            app: &mut App,
+            path: PathBuf,
+            dir: &DirectoryDiff,
+            frame: &mut Frame,
+            area: Rect,
+            block: Block<'static>,
+        ) {
+            if dir.entries.is_empty() {
+                let text = Text::from(vec![
+                    Line::from(vec![]),
+                    Line::from("Empty").centered(),
+                    Line::from(vec![]),
+                ]);
+                let paragraph = Paragraph::new(text).block(block.title(path.display().to_string()));
+                frame.render_widget(paragraph, area);
+            } else {
+                let state = app.nav_list_states.entry(path.clone()).or_default();
+                let navlist = NavList::new(
+                    &mut app.diff_cache,
+                    &path,
+                    block.title(path.display().to_string()),
+                );
+                frame.render_stateful_widget(navlist, area, state);
+            }
         }
     }
 }

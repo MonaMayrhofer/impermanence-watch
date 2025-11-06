@@ -1,12 +1,16 @@
 use std::path::Path;
 
 use crate::{
+    diff_util::LeftRightBoth,
     dir_diff::{
-        DiffCache, DirectoryDiff, LeftRightBoth, PathDiff, PathElementDiff, PathElementState,
-        SymlinkDiff, SymlinkState,
+        Differ, DirectoryDiff, PathDiff, SymlinkDiff, SymlinkState, TypedPathDiff, TypedPathState,
     },
     typed_actions::Action,
 };
+
+pub(crate) trait AssessmentCache {
+    fn get_assessment(&mut self, location: &Path) -> Option<&Vec<Assessment>>;
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum AssessmentGrade {
@@ -14,7 +18,7 @@ pub(crate) enum AssessmentGrade {
     Meaningless,
 }
 
-pub(crate) type AssessedAction = Action<PathElementState, PathElementDiff>;
+pub(crate) type AssessedAction = Action<TypedPathState, TypedPathDiff>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Assessment {
@@ -22,31 +26,23 @@ pub(crate) struct Assessment {
     pub(crate) grade: AssessmentGrade,
 }
 
-pub(crate) struct Assesser<'a> {
-    pub(crate) diff_cache: &'a mut DiffCache,
+pub(crate) struct Assesser<TCache> {
+    pub(crate) diff_cache: TCache,
 }
 
-impl<'a> Assesser<'a> {
+impl<TCache: AssessmentCache> Assesser<TCache> {
     pub(crate) fn assess(&mut self, location: &Path, diff: PathDiff) -> Vec<Assessment> {
         match diff {
             PathDiff::Recreated { state } => match state {
                 LeftRightBoth::Both(
-                    PathElementState::Directory(before_dir),
-                    diff_after @ PathElementState::FilesystemBoundary(_),
+                    TypedPathState::Directory(before_dir),
+                    diff_after @ TypedPathState::FilesystemBoundary(_),
                 ) if before_dir.entries.is_empty() => {
-                    // An empty directory was replaced by a mountpoint
-                    vec![
-                        Assessment {
-                            action: AssessedAction::Deleted(PathElementState::Directory(
-                                before_dir,
-                            )),
-                            grade: AssessmentGrade::Meaningless,
-                        },
-                        Assessment {
-                            action: AssessedAction::Created(diff_after),
-                            grade: AssessmentGrade::Meaningless,
-                        },
-                    ]
+                    // An empty directory was turned into a mountpoint => The empty directory didn't actually get deleted
+                    vec![Assessment {
+                        action: AssessedAction::Created(diff_after),
+                        grade: AssessmentGrade::Meaningless,
+                    }]
                 }
                 LeftRightBoth::Both(diff_before, diff_after) => {
                     // Something was recreated
@@ -61,6 +57,22 @@ impl<'a> Assesser<'a> {
                         },
                     ]
                 }
+
+                // Watch out if empty directories are created or deleted
+                LeftRightBoth::Left(TypedPathState::Directory(directory)) => {
+                    vec![Assessment {
+                        grade: assess_directory(self, location, &directory),
+                        action: AssessedAction::Deleted(TypedPathState::Directory(directory)),
+                    }]
+                }
+                // Watch out if empty directories are created or deleted
+                LeftRightBoth::Right(TypedPathState::Directory(directory)) => {
+                    vec![Assessment {
+                        grade: assess_directory(self, location, &directory),
+                        action: AssessedAction::Created(TypedPathState::Directory(directory)),
+                    }]
+                }
+
                 LeftRightBoth::Left(diff_before) =>
                 // Something was deleted
                 {
@@ -79,28 +91,31 @@ impl<'a> Assesser<'a> {
                 }
             },
             PathDiff::Modified(path_element_diff) => match path_element_diff {
-                PathElementDiff::Directory(directory_diff) => {
-                    vec![assess_directory(self, location, directory_diff)]
+                TypedPathDiff::Directory(directory_diff) => {
+                    vec![Assessment {
+                        grade: assess_directory(self, location, &directory_diff),
+                        action: AssessedAction::Modified(TypedPathDiff::Directory(directory_diff)),
+                    }]
                 }
-                PathElementDiff::Symlink(symlink_diff) => vec![assess_symlink(symlink_diff)],
-                PathElementDiff::FilesystemBoundary(()) => vec![],
-                PathElementDiff::File(()) => vec![],
-                PathElementDiff::Unknown(_) => todo!(),
+                TypedPathDiff::Symlink(symlink_diff) => vec![assess_symlink(symlink_diff)],
+                TypedPathDiff::FilesystemBoundary(()) => vec![],
+                TypedPathDiff::File(()) => vec![],
+                TypedPathDiff::Unknown(_) => todo!(),
             },
         }
     }
 }
 
-pub(crate) fn assess_directory(
-    silf: &mut Assesser,
+pub(crate) fn assess_directory<TCache: AssessmentCache>(
+    silf: &mut Assesser<TCache>,
     location: &Path,
-    diff: DirectoryDiff,
-) -> Assessment {
+    diff: &DirectoryDiff,
+) -> AssessmentGrade {
     let contains_meaningful_changes = diff.entries.iter().any(|(child_path, _)| {
         // We could also return false here, instead of expecting...
         let child_assessments = silf
             .diff_cache
-            .get_diff(location.join(child_path))
+            .get_assessment(&location.join(child_path))
             .expect("child path diffs should always exist");
 
         child_assessments
@@ -108,13 +123,10 @@ pub(crate) fn assess_directory(
             .any(|child_diff| matches!(child_diff.grade, AssessmentGrade::Meaningful))
     });
 
-    Assessment {
-        action: AssessedAction::Modified(PathElementDiff::Directory(diff)),
-        grade: if contains_meaningful_changes {
-            AssessmentGrade::Meaningful
-        } else {
-            AssessmentGrade::Meaningless
-        },
+    if contains_meaningful_changes {
+        AssessmentGrade::Meaningful
+    } else {
+        AssessmentGrade::Meaningless
     }
 }
 
@@ -124,13 +136,10 @@ pub(crate) fn assess_symlink(diff: SymlinkDiff) -> Assessment {
         (before, after) if before == after => {
             // Both links are literally identical
             Assessment {
-                action: AssessedAction::Identical(PathElementState::Symlink(diff.before)),
+                action: AssessedAction::Identical(TypedPathState::Symlink(diff.before)),
                 // TODO add an assessment summary for each file type. That would require a unfication of all Typed<..> things
                 grade: AssessmentGrade::Meaningless,
             }
-            // return SymlinkDiff::IdenticalInNix {
-            //     target: before_target.clone(),
-            // };
         }
         (
             SymlinkState::NixStoreLink {
@@ -144,25 +153,16 @@ pub(crate) fn assess_symlink(diff: SymlinkDiff) -> Assessment {
         ) if b_p == a_p => {
             // The path is identical, and we know something differs (because of the first match), so its the generation
             Assessment {
-                action: AssessedAction::Modified(PathElementDiff::Symlink(diff)),
+                action: AssessedAction::Modified(TypedPathDiff::Symlink(diff)),
                 grade: AssessmentGrade::Meaningless,
             }
-            // return SymlinkDiff::NixGenerationChanged {
-            //     path_within_derivation: before_path.to_string(),
-            //     before: before_hash.to_owned(),
-            //     after: after_hash.to_owned(),
-            // };
         }
         (_, _) => {
             // We know they are not identical due to the first match
             Assessment {
-                action: AssessedAction::Modified(PathElementDiff::Symlink(diff)),
+                action: AssessedAction::Modified(TypedPathDiff::Symlink(diff)),
                 grade: AssessmentGrade::Meaningful,
             }
-            // return SymlinkDiff::DifferentInNix {
-            //     before: PathBuf::from(before_nix_path),
-            //     after: PathBuf::from(after_nix_path),
-            // };
         }
     }
 }

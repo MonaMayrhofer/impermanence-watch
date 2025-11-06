@@ -7,6 +7,26 @@ pub(crate) enum Typed<TS, TD, TF, TFB, TU> {
     Unknown(TU),
 }
 
+pub(crate) enum FileType {
+    Symlink,
+    Directory,
+    File,
+    FilesystemBoundary,
+    Unknown,
+}
+
+impl<TS, TD, TF, TFB, TU> Typed<TS, TD, TF, TFB, TU> {
+    pub(crate) fn file_type(&self) -> FileType {
+        match self {
+            Self::Directory(_) => FileType::Directory,
+            Self::File(_) => FileType::File,
+            Self::Symlink(_) => FileType::Symlink,
+            Self::FilesystemBoundary(_) => FileType::FilesystemBoundary,
+            Self::Unknown(_) => FileType::Unknown,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Action<TState, TDiff> {
     Created(TState),

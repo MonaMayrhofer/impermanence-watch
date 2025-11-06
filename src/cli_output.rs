@@ -1,14 +1,14 @@
 use std::path::{Path, PathBuf};
 
-use crate::dir_diff::DiffCache;
+use crate::dir_diff::Differ;
 
 pub(crate) fn print_dir_diff(before: &Path, after: &Path) {
-    let mut cache = DiffCache::new(before, after);
+    let mut cache = Differ::new(before, after);
 
     print_dir_diff_rec(&mut cache, PathBuf::new());
 
-    fn print_dir_diff_rec(cache: &mut DiffCache, location: PathBuf) {
-        let diff = cache.get_diff(location);
+    fn print_dir_diff_rec(cache: &mut Differ, location: PathBuf) {
+        let diff = cache.get_diff(&location);
 
         todo!();
     }

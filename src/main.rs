@@ -7,6 +7,7 @@ use crate::{cli::Cli, tui::tui};
 pub(crate) mod assesser;
 pub(crate) mod cli;
 pub(crate) mod cli_output;
+pub(crate) mod diff_util;
 pub(crate) mod dir_diff;
 pub(crate) mod tui;
 pub(crate) mod typed_actions;
