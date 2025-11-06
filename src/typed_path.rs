@@ -7,7 +7,7 @@ use crate::typed_actions::Typed;
 
 /// Keep in mind that path existence can change between creation and usage.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ExistentPath(PathBuf);
+pub(crate) struct ExistentPath(PathBuf);
 
 impl TryFrom<PathBuf> for ExistentPath {
     type Error = std::io::Error;
@@ -20,19 +20,19 @@ impl TryFrom<PathBuf> for ExistentPath {
 }
 
 impl ExistentPath {
-    pub fn as_path(&self) -> &Path {
+    pub(crate) fn as_path(&self) -> &Path {
         &self.0
     }
 }
 
-pub trait AsPath {
+pub(crate) trait AsPath {
     fn as_path(&self) -> &Path;
 }
 
 macro_rules! typed_path_type {
     ($name: ident) => {
         #[derive(Clone, Debug, PartialEq, Eq)]
-        pub struct $name(ExistentPath);
+        pub(crate) struct $name(ExistentPath);
 
         impl AsPath for $name {
             fn as_path(&self) -> &Path {
@@ -49,18 +49,18 @@ typed_path_type!(FilesystemBoundaryPath);
 typed_path_type!(UnknownPath);
 
 impl SymlinkPath {
-    pub fn target(&self) -> PathBuf {
+    pub(crate) fn target(&self) -> PathBuf {
         std::fs::read_link(self.0.as_path())
             .expect("path has already been checked to exist and be a symlink. The filesystem must have changed while the program was running.")
     }
 }
 impl DirectoryPath {
-    pub fn read_dir(&self) -> std::fs::ReadDir {
+    pub(crate) fn read_dir(&self) -> std::fs::ReadDir {
         std::fs::read_dir(self.0.as_path()).expect("path has already been checked to exist and be a directory. The filesystem must have changed while the program was running.")
     }
 }
 
-pub type TypedPath =
+pub(crate) type TypedPath =
     Typed<SymlinkPath, DirectoryPath, FilePath, FilesystemBoundaryPath, UnknownPath>;
 
 impl From<ExistentPath> for TypedPath {
@@ -85,7 +85,7 @@ impl From<ExistentPath> for TypedPath {
 }
 
 impl TypedPath {
-    pub fn as_path(&self) -> &Path {
+    pub(crate) fn as_path(&self) -> &Path {
         match self {
             TypedPath::Symlink(path) => path.as_path(),
             TypedPath::Directory(path) => path.as_path(),

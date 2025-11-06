@@ -12,10 +12,10 @@ use crate::{
     typed_path::{AsPath, DirectoryPath, ExistentPath, SymlinkPath, TypedPath},
 };
 
-pub type PathElementState = Typed<SymlinkState, DirectoryDiff, (), (), String>;
+pub(crate) type PathElementState = Typed<SymlinkState, DirectoryDiff, (), (), String>;
 
 impl PathElementState {
-    pub fn file_type(&self) -> FileType {
+    pub(crate) fn file_type(&self) -> FileType {
         match self {
             PathElementState::Directory(_) => FileType::Directory,
             PathElementState::File(_) => FileType::File,
@@ -26,10 +26,10 @@ impl PathElementState {
     }
 }
 
-pub type PathElementDiff = Typed<SymlinkDiff, DirectoryDiff, (), (), String>;
+pub(crate) type PathElementDiff = Typed<SymlinkDiff, DirectoryDiff, (), (), String>;
 
 impl PathElementDiff {
-    pub fn file_type(&self) -> FileType {
+    pub(crate) fn file_type(&self) -> FileType {
         match self {
             PathElementDiff::Directory(_) => FileType::Directory,
             PathElementDiff::File(_) => FileType::File,
@@ -41,14 +41,14 @@ impl PathElementDiff {
 }
 
 #[derive(Clone, Debug)]
-pub enum PathDiff {
+pub(crate) enum PathDiff {
     Recreated {
         state: LeftRightBoth<PathElementState>,
     },
     Modified(PathElementDiff),
 }
 
-pub fn hashmap_diff<TKey, TVal>(
+pub(crate) fn hashmap_diff<TKey, TVal>(
     a: HashMap<TKey, TVal>,
     b: HashMap<TKey, TVal>,
 ) -> HashMap<TKey, LeftRightBoth<TVal>>
@@ -72,7 +72,7 @@ where
     result
 }
 
-pub enum FileType {
+pub(crate) enum FileType {
     Symlink,
     Directory,
     File,
@@ -100,14 +100,14 @@ impl From<&Path> for FileType {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum LeftRightBoth<T> {
+pub(crate) enum LeftRightBoth<T> {
     Left(T),
     Right(T),
     Both(T, T),
 }
 
 impl<T> LeftRightBoth<T> {
-    pub fn with_left(self, left: T) -> Self {
+    pub(crate) fn with_left(self, left: T) -> Self {
         match self {
             LeftRightBoth::Left(_) => LeftRightBoth::Left(left),
             LeftRightBoth::Right(r) => LeftRightBoth::Both(left, r),
@@ -115,7 +115,7 @@ impl<T> LeftRightBoth<T> {
         }
     }
 
-    pub fn with_right(self, right: T) -> Self {
+    pub(crate) fn with_right(self, right: T) -> Self {
         match self {
             LeftRightBoth::Left(l) => LeftRightBoth::Both(l, right),
             LeftRightBoth::Right(_) => LeftRightBoth::Right(right),
@@ -123,7 +123,7 @@ impl<T> LeftRightBoth<T> {
         }
     }
 
-    pub fn map<F, U>(self, mut f: F) -> LeftRightBoth<U>
+    pub(crate) fn map<F, U>(self, mut f: F) -> LeftRightBoth<U>
     where
         F: FnMut(T) -> U,
     {
@@ -136,7 +136,7 @@ impl<T> LeftRightBoth<T> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SymlinkState {
+pub(crate) enum SymlinkState {
     Link {
         target: PathBuf,
         broken: bool,
@@ -149,7 +149,7 @@ pub enum SymlinkState {
 }
 
 impl SymlinkState {
-    pub fn target(&self) -> &PathBuf {
+    pub(crate) fn target(&self) -> &PathBuf {
         match self {
             SymlinkState::Link { target, .. } => target,
             SymlinkState::NixStoreLink { target, .. } => target,
@@ -180,25 +180,25 @@ impl From<&SymlinkPath> for SymlinkState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymlinkDiff {
-    pub before: SymlinkState,
-    pub after: SymlinkState,
+pub(crate) struct SymlinkDiff {
+    pub(crate) before: SymlinkState,
+    pub(crate) after: SymlinkState,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DirectoryDiff {
-    pub entries: Vec<(PathBuf, LeftRightBoth<PathBuf>)>,
+pub(crate) struct DirectoryDiff {
+    pub(crate) entries: Vec<(PathBuf, LeftRightBoth<PathBuf>)>,
 }
 
-pub struct DiffCache {
-    pub diffs: HashMap<PathBuf, Vec<Assessment>>,
+pub(crate) struct DiffCache {
+    pub(crate) diffs: HashMap<PathBuf, Vec<Assessment>>,
 
-    pub before: PathBuf,
-    pub after: PathBuf,
+    pub(crate) before: PathBuf,
+    pub(crate) after: PathBuf,
 }
 
 impl DiffCache {
-    pub fn new(before: &Path, after: &Path) -> Self {
+    pub(crate) fn new(before: &Path, after: &Path) -> Self {
         Self {
             diffs: HashMap::new(),
             before: before.to_path_buf(),
@@ -206,7 +206,7 @@ impl DiffCache {
         }
     }
 
-    pub fn get_diff(&mut self, location: PathBuf) -> Option<&Vec<Assessment>> {
+    pub(crate) fn get_diff(&mut self, location: PathBuf) -> Option<&Vec<Assessment>> {
         //TODO This is a lifetime mess, but it don't think i can solve it before polonius hits
 
         if !self.diffs.contains_key(&location) {

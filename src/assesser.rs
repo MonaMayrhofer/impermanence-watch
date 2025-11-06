@@ -9,25 +9,25 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AssessmentGrade {
+pub(crate) enum AssessmentGrade {
     Meaningful,
     Meaningless,
 }
 
-pub type AssessedAction = Action<PathElementState, PathElementDiff>;
+pub(crate) type AssessedAction = Action<PathElementState, PathElementDiff>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Assessment {
-    pub action: AssessedAction,
-    pub grade: AssessmentGrade,
+pub(crate) struct Assessment {
+    pub(crate) action: AssessedAction,
+    pub(crate) grade: AssessmentGrade,
 }
 
-pub struct Assesser<'a> {
-    pub diff_cache: &'a mut DiffCache,
+pub(crate) struct Assesser<'a> {
+    pub(crate) diff_cache: &'a mut DiffCache,
 }
 
 impl<'a> Assesser<'a> {
-    pub fn assess(&mut self, location: &Path, diff: PathDiff) -> Vec<Assessment> {
+    pub(crate) fn assess(&mut self, location: &Path, diff: PathDiff) -> Vec<Assessment> {
         match diff {
             PathDiff::Recreated { state } => match state {
                 LeftRightBoth::Both(
@@ -91,7 +91,11 @@ impl<'a> Assesser<'a> {
     }
 }
 
-pub fn assess_directory(silf: &mut Assesser, location: &Path, diff: DirectoryDiff) -> Assessment {
+pub(crate) fn assess_directory(
+    silf: &mut Assesser,
+    location: &Path,
+    diff: DirectoryDiff,
+) -> Assessment {
     let contains_meaningful_changes = diff.entries.iter().any(|(child_path, _)| {
         // We could also return false here, instead of expecting...
         let child_assessments = silf
@@ -115,7 +119,7 @@ pub fn assess_directory(silf: &mut Assesser, location: &Path, diff: DirectoryDif
 }
 
 //TODO Honestly the assesser should take care of constructing the diffs in a way?
-pub fn assess_symlink(diff: SymlinkDiff) -> Assessment {
+pub(crate) fn assess_symlink(diff: SymlinkDiff) -> Assessment {
     match (&diff.before, &diff.after) {
         (before, after) if before == after => {
             // Both links are literally identical

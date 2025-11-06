@@ -4,14 +4,14 @@ use clap::Parser as _;
 
 use crate::{cli::Cli, tui::tui};
 
-pub mod assesser;
-pub mod cli;
-pub mod cli_output;
-pub mod dir_diff;
-pub mod thunk;
-pub mod tui;
-pub mod typed_actions;
-pub mod typed_path;
+pub(crate) mod assesser;
+pub(crate) mod cli;
+pub(crate) mod cli_output;
+pub(crate) mod dir_diff;
+pub(crate) mod thunk;
+pub(crate) mod tui;
+pub(crate) mod typed_actions;
+pub(crate) mod typed_path;
 
 fn main() {
     let args = Cli::parse();

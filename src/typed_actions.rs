@@ -1,5 +1,5 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Typed<TS, TD, TF, TFB, TU> {
+pub(crate) enum Typed<TS, TD, TF, TFB, TU> {
     Symlink(TS),
     Directory(TD),
     File(TF),
@@ -8,7 +8,7 @@ pub enum Typed<TS, TD, TF, TFB, TU> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Action<TState, TDiff> {
+pub(crate) enum Action<TState, TDiff> {
     Created(TState),
     Deleted(TState),
     Modified(TDiff),
@@ -32,13 +32,13 @@ macro_rules! lift_typed {
     };
 }
 
-pub enum StateOrDiff<TState, TDiff> {
+pub(crate) enum StateOrDiff<TState, TDiff> {
     Diff(TDiff),
     State(TState),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ActionTag {
+pub(crate) enum ActionTag {
     Created,
     Deleted,
     Modified,

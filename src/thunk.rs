@@ -1,13 +1,13 @@
-pub struct Thunk<T> {
+pub(crate) struct Thunk<T> {
     data: ThunkData<T>,
 }
 
-pub enum ThunkData<T> {
+pub(crate) enum ThunkData<T> {
     Present(T),
     Pending(Option<Box<dyn FnOnce() -> T>>),
 }
 impl<T> Thunk<T> {
-    pub fn get(&mut self) -> &T {
+    pub(crate) fn get(&mut self) -> &T {
         if let ThunkData::Present(ref p) = self.data {
             p
         } else {
@@ -25,7 +25,7 @@ impl<T> Thunk<T> {
         }
     }
 
-    pub fn get_mut(&mut self) -> &mut T {
+    pub(crate) fn get_mut(&mut self) -> &mut T {
         if let ThunkData::Present(ref mut p) = self.data {
             p
         } else {
@@ -43,12 +43,12 @@ impl<T> Thunk<T> {
         }
     }
 
-    pub fn present(it: T) -> Thunk<T> {
+    pub(crate) fn present(it: T) -> Thunk<T> {
         Thunk {
             data: ThunkData::Present(it),
         }
     }
-    pub fn lazy(it: impl FnOnce() -> T + 'static) -> Thunk<T> {
+    pub(crate) fn lazy(it: impl FnOnce() -> T + 'static) -> Thunk<T> {
         Thunk {
             data: ThunkData::Pending(Some(Box::new(it))),
         }

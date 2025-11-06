@@ -28,7 +28,7 @@ use crate::{
     typed_actions::{Action, ActionTag, Typed},
 };
 
-pub fn tui() -> Result<()> {
+pub(crate) fn tui() -> Result<()> {
     color_eyre::install()?;
 
     let mut open = OpenOptions::new();

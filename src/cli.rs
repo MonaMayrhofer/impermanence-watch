@@ -1,7 +1,7 @@
 use clap::Parser;
 
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
-pub struct Cli {
+pub(crate) struct Cli {
     #[arg(short, long, default_value_t = false)]
-    pub interactive: bool,
+    pub(crate) interactive: bool,
 }

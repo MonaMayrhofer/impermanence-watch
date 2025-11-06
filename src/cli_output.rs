@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::dir_diff::DiffCache;
 
-pub fn print_dir_diff(before: &Path, after: &Path) {
+pub(crate) fn print_dir_diff(before: &Path, after: &Path) {
     let mut cache = DiffCache::new(before, after);
 
     print_dir_diff_rec(&mut cache, PathBuf::new());

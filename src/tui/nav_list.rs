@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, List, ListState, Paragraph, StatefulWidget, Widget},
 };
 
-pub trait NavListAdapter {
+pub(crate) trait NavListAdapter {
     type Location;
 
     fn get_items(
@@ -27,18 +27,18 @@ pub trait NavListAdapter {
     ) -> Option<Self::Location>;
 }
 
-pub struct NavListItem<'a, TLocation> {
-    pub text: Text<'a>,
-    pub sub_location: Option<TLocation>,
+pub(crate) struct NavListItem<'a, TLocation> {
+    pub(crate) text: Text<'a>,
+    pub(crate) sub_location: Option<TLocation>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct NavListState<TLocation> {
-    pub offset: usize,
-    pub selected: Option<TLocation>,
+pub(crate) struct NavListState<TLocation> {
+    pub(crate) offset: usize,
+    pub(crate) selected: Option<TLocation>,
 }
 
-pub struct NavList<'a, TLocation> {
+pub(crate) struct NavList<'a, TLocation> {
     adapter: &'a mut dyn NavListAdapter<Location = TLocation>,
     location: &'a TLocation,
 
@@ -47,7 +47,7 @@ pub struct NavList<'a, TLocation> {
 }
 
 impl<'a, TLocation> NavList<'a, TLocation> {
-    pub fn new(
+    pub(crate) fn new(
         adapter: &'a mut impl NavListAdapter<Location = TLocation>,
         location: &'a TLocation,
         block: Block<'static>,
