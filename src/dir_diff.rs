@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::typed_path::{DirectoryPath, ExistentPath, SymlinkPath, TypedPath};
+use crate::typed_path::{AsPath, DirectoryPath, ExistentPath, SymlinkPath, TypedPath};
 
 pub trait DiffLayout {
     type DirectoryDiff;
@@ -330,6 +330,7 @@ impl DiffCache {
 
     pub fn get_diff(&mut self, location: PathBuf) -> &PathDiff {
         //TODO This is a lifetime mess, but it don't think i can solve it before polonius hits
+
         if !self.diffs.contains_key(&location) {
             let new = self.calculate_diff(&location);
             self.diffs.insert(location.clone(), new);
@@ -343,8 +344,12 @@ impl DiffCache {
         let before = self.before.join(location);
         let after = self.after.join(location);
 
-        let before_t = ExistentPath::try_from(before).ok().map(TypedPath::from);
-        let after_t = ExistentPath::try_from(after).ok().map(TypedPath::from);
+        let before_t = ExistentPath::try_from(before.clone())
+            .ok()
+            .map(TypedPath::from);
+        let after_t = ExistentPath::try_from(after.clone())
+            .ok()
+            .map(TypedPath::from);
 
         match (before_t, after_t) {
             //TODO This case is eww
@@ -400,9 +405,9 @@ impl DiffCache {
                         .map(|entry| {
                             let entry = entry.unwrap();
                             let path = entry.path();
-                            let rel_path = path.strip_prefix(&self.before).unwrap();
+                            let child_location = path.strip_prefix(dir.as_path()).unwrap();
 
-                            (rel_path.to_owned(), path)
+                            (child_location.to_owned(), path)
                         })
                         .collect::<HashMap<_, _>>()
                 })
@@ -414,9 +419,9 @@ impl DiffCache {
                         .map(|entry| {
                             let entry = entry.unwrap();
                             let path = entry.path();
-                            let rel_path = path.strip_prefix(&self.after).unwrap();
+                            let child_location = path.strip_prefix(dir.as_path()).unwrap();
 
-                            (rel_path.to_owned(), path)
+                            (child_location.to_owned(), path)
                         })
                         .collect::<HashMap<_, _>>()
                 })

@@ -4,6 +4,7 @@ use std::{
 };
 
 /// Keep in mind that path existence can change between creation and usage.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExistentPath(PathBuf);
 
 impl TryFrom<PathBuf> for ExistentPath {
@@ -28,6 +29,7 @@ pub trait AsPath {
 
 macro_rules! typed_path_type {
     ($name: ident) => {
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct $name(ExistentPath);
 
         impl AsPath for $name {
@@ -56,6 +58,7 @@ impl DirectoryPath {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypedPath {
     Symlink(SymlinkPath),
     Directory(DirectoryPath),
