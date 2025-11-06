@@ -1,5 +1,4 @@
 use std::{
-    fs::File,
     os::unix::fs::MetadataExt as _,
     path::{Path, PathBuf},
 };
@@ -51,13 +50,13 @@ typed_path_type!(UnknownPath);
 
 impl SymlinkPath {
     pub fn target(&self) -> PathBuf {
-        std::fs::read_link(&self.0.as_path())
+        std::fs::read_link(self.0.as_path())
             .expect("path has already been checked to exist and be a symlink. The filesystem must have changed while the program was running.")
     }
 }
 impl DirectoryPath {
     pub fn read_dir(&self) -> std::fs::ReadDir {
-        std::fs::read_dir(&self.0.as_path()).expect("path has already been checked to exist and be a directory. The filesystem must have changed while the program was running.")
+        std::fs::read_dir(self.0.as_path()).expect("path has already been checked to exist and be a directory. The filesystem must have changed while the program was running.")
     }
 }
 

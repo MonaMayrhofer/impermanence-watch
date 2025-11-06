@@ -78,6 +78,10 @@ where
                 .iter()
                 .position(|item| item.sub_location.as_ref() == Some(it))
         });
+        tracing::debug!(
+            "{:?}",
+            items.iter().map(|it| &it.sub_location).collect::<Vec<_>>()
+        );
 
         tracing::info!(
             "Finding Selected idx: {:?} {:?}",
@@ -86,7 +90,7 @@ where
         );
 
         let list = List::new(items.into_iter().map(|it| it.text))
-            .block(Block::bordered().title("List"))
+            .block(self.block)
             .highlight_style(Style::new().reversed())
             .highlight_symbol(">>")
             .repeat_highlight_symbol(true);

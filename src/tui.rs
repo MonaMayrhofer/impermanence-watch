@@ -162,15 +162,13 @@ impl NavListAdapter for DiffCache {
                         .get_diff(location.join(&rel_path))
                         .expect("Child diffs of a dir should always exist");
 
-                    let sub_location = location.join(&rel_path);
-
                     child_diff
                         .iter()
                         .map(|diff| {
                             NavListItem {
                                 //TODO This does not contain meaningful changes
                                 text: display_diff(rel_path.as_path(), diff),
-                                sub_location: Some(sub_location.clone()),
+                                sub_location: Some(rel_path.clone()),
                             }
                         })
                         .collect::<Vec<_>>()

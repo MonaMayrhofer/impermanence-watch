@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::dir_diff::{DiffCache, LeftRightBoth};
+use crate::dir_diff::DiffCache;
 
 pub fn print_dir_diff(before: &Path, after: &Path) {
     let mut cache = DiffCache::new(before, after);

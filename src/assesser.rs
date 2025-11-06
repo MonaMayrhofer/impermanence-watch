@@ -1,34 +1,11 @@
-use std::path::{Path, PathBuf};
-
-pub type AssessedActionInverted = Typed<
-    Action<SymlinkState, SymlinkDiff>,
-    Action<DirectoryDiff, DirectoryDiff>,
-    Action<(), ()>,
-    Action<(), ()>,
-    String,
->;
-
-impl From<AssessedAction> for AssessedActionInverted {
-    fn from(value: AssessedAction) -> Self {
-        lift_typed!(
-            value =>
-            Action::Created
-            Action::Deleted
-            Action::Modified
-            Action::Identical
-        )
-    }
-}
-
-// ===========================
+use std::path::Path;
 
 use crate::{
     dir_diff::{
         DiffCache, DirectoryDiff, LeftRightBoth, PathDiff, PathElementDiff, PathElementState,
         SymlinkDiff, SymlinkState,
     },
-    lift_typed,
-    typed_actions::{Action, Typed},
+    typed_actions::Action,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -52,11 +29,11 @@ pub struct Assesser<'a> {
 impl<'a> Assesser<'a> {
     pub fn assess(&mut self, location: &Path, diff: PathDiff) -> Vec<Assessment> {
         match diff {
-            PathDiff::Recreated { state } => match (state) {
-                (LeftRightBoth::Both(
+            PathDiff::Recreated { state } => match state {
+                LeftRightBoth::Both(
                     PathElementState::Directory(before_dir),
                     diff_after @ PathElementState::FilesystemBoundary(_),
-                )) if before_dir.entries.is_empty() => {
+                ) if before_dir.entries.is_empty() => {
                     // An empty directory was replaced by a mountpoint
                     vec![
                         Assessment {
@@ -105,9 +82,9 @@ impl<'a> Assesser<'a> {
                 PathElementDiff::Directory(directory_diff) => {
                     vec![assess_directory(self, location, directory_diff)]
                 }
-                PathElementDiff::File(()) => todo!(),
                 PathElementDiff::Symlink(symlink_diff) => vec![assess_symlink(symlink_diff)],
-                PathElementDiff::FilesystemBoundary(()) => todo!(),
+                PathElementDiff::FilesystemBoundary(()) => vec![],
+                PathElementDiff::File(()) => vec![],
                 PathElementDiff::Unknown(_) => todo!(),
             },
         }

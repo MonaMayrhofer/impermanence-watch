@@ -15,29 +15,6 @@ pub enum Action<TState, TDiff> {
     Identical(TState),
 }
 
-impl<TState, TDiff> Action<TState, TDiff> {
-    pub fn to_tagged(self) -> TaggedAction<TState, TDiff> {
-        match self {
-            Action::Created(state) => TaggedAction {
-                tag: ActionTag::Created,
-                content: StateOrDiff::State(state),
-            },
-            Action::Deleted(state) => TaggedAction {
-                tag: ActionTag::Deleted,
-                content: StateOrDiff::State(state),
-            },
-            Action::Modified(diff) => TaggedAction {
-                tag: ActionTag::Modified,
-                content: StateOrDiff::Diff(diff),
-            },
-            Action::Identical(state) => TaggedAction {
-                tag: ActionTag::Identical,
-                content: StateOrDiff::State(state),
-            },
-        }
-    }
-}
-
 #[macro_export]
 macro_rules! lift_typed {
     ($value:ident => $($enum_variant:path)+) => {
@@ -58,11 +35,6 @@ macro_rules! lift_typed {
 pub enum StateOrDiff<TState, TDiff> {
     Diff(TDiff),
     State(TState),
-}
-
-pub struct TaggedAction<TState, TDiff> {
-    tag: ActionTag,
-    content: StateOrDiff<TState, TDiff>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -236,28 +236,26 @@ impl DiffCache {
             .map(TypedPath::from);
 
         match (before_t, after_t) {
-            //TODO This case is eww
             (None, None) => None,
 
             (None, Some(after_ft)) => Some(PathDiff::Recreated {
-                state: LeftRightBoth::Right(self.from_nothing(location, &after_ft)),
+                state: LeftRightBoth::Right(Self::from_nothing(&after_ft)),
             }),
             (Some(before_ft), None) => Some(PathDiff::Recreated {
-                state: LeftRightBoth::Left(self.to_nothing(location, &before_ft)),
+                state: LeftRightBoth::Left(Self::to_nothing(&before_ft)),
             }),
 
             (Some(before_ft), Some(after_ft)) => Some(match (before_ft, after_ft) {
                 (TypedPath::Symlink(before_ft), TypedPath::Symlink(after_ft)) => {
-                    PathDiff::Modified(PathElementDiff::Symlink(
-                        self.make_symlink_diff(&before_ft, &after_ft),
-                    ))
+                    PathDiff::Modified(PathElementDiff::Symlink(Self::make_symlink_diff(
+                        &before_ft, &after_ft,
+                    )))
                 }
                 (TypedPath::File(_), TypedPath::File(_)) => {
                     PathDiff::Modified(PathElementDiff::File(()))
                 }
                 (TypedPath::Directory(before), TypedPath::Directory(after)) => {
-                    PathDiff::Modified(PathElementDiff::Directory(self.make_directory_diff(
-                        location,
+                    PathDiff::Modified(PathElementDiff::Directory(Self::make_directory_diff(
                         Some(&before),
                         Some(&after),
                     )))
@@ -270,8 +268,8 @@ impl DiffCache {
                 }
                 (before, after) => PathDiff::Recreated {
                     state: LeftRightBoth::Both(
-                        self.to_nothing(location, &before),
-                        self.from_nothing(location, &after),
+                        Self::to_nothing(&before),
+                        Self::from_nothing(&after),
                     ),
                 },
             }),
@@ -279,8 +277,6 @@ impl DiffCache {
     }
 
     fn make_directory_diff(
-        &mut self,
-        location: &Path,
         before: Option<&DirectoryPath>,
         after: Option<&DirectoryPath>,
     ) -> DirectoryDiff {
@@ -321,30 +317,25 @@ impl DiffCache {
         DirectoryDiff { entries: items }
     }
 
-    fn make_symlink_diff(&mut self, before: &SymlinkPath, after: &SymlinkPath) -> SymlinkDiff {
+    fn make_symlink_diff(before: &SymlinkPath, after: &SymlinkPath) -> SymlinkDiff {
         SymlinkDiff {
             before: SymlinkState::from(before),
             after: SymlinkState::from(after),
         }
     }
 
-    fn from_nothing(&mut self, location: &Path, path: &TypedPath) -> PathElementState {
-        self.created_or_deleted(location, path, false)
+    fn from_nothing(path: &TypedPath) -> PathElementState {
+        Self::created_or_deleted(path, false)
     }
-    fn to_nothing(&mut self, location: &Path, path: &TypedPath) -> PathElementState {
-        self.created_or_deleted(location, path, true)
+    fn to_nothing(path: &TypedPath) -> PathElementState {
+        Self::created_or_deleted(path, true)
     }
-    fn created_or_deleted(
-        &mut self,
-        location: &Path,
-        path: &TypedPath,
-        deleted: bool,
-    ) -> PathElementState {
+    fn created_or_deleted(path: &TypedPath, deleted: bool) -> PathElementState {
         match path {
             TypedPath::Directory(dir_path) => PathElementState::Directory(if deleted {
-                self.make_directory_diff(location, Some(dir_path), None)
+                Self::make_directory_diff(Some(dir_path), None)
             } else {
-                self.make_directory_diff(location, None, Some(dir_path))
+                Self::make_directory_diff(None, Some(dir_path))
             }),
             TypedPath::Symlink(symlink_path) => {
                 PathElementState::Symlink(SymlinkState::from(symlink_path))
