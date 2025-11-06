@@ -9,15 +9,6 @@ use std::{
 
 use crate::typed_path::{AsPath, DirectoryPath, ExistentPath, SymlinkPath, TypedPath};
 
-pub trait DiffLayout {
-    type DirectoryDiff;
-    type SymlinkDiff;
-}
-
-pub struct DirDiff {
-    pub contents: HashMap<PathBuf, LeftRightBoth<PathBuf>>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PathElementState {
     Directory(DirectoryDiff),
@@ -27,53 +18,14 @@ pub enum PathElementState {
     Unknown(String),
 }
 
-// TODO I left off here - is this a good solution? The PathElementStateAction feels like a hack...
-//
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PathElementStateAction<TState, TDiff> {
-    Create(TState),
-    Delete(TState),
-    Modify(TDiff),
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PathElementDiff {
-    Directory(PathElementStateAction<DirectoryDiff, DirectoryDiff>),
+    Directory(DirectoryDiff),
     File,
-    Symlink(PathElementStateAction<SymlinkState, SymlinkDiff>),
+    Symlink(SymlinkDiff),
     Nonexistent,
     FilesystemBoundary,
     Unknown(String),
-}
-
-impl PathElementDiff {
-    pub fn create(state: PathElementState) -> PathElementDiff {
-        match state {
-            PathElementState::Directory(diff) => {
-                PathElementDiff::Directory(PathElementStateAction::Create(diff))
-            }
-            PathElementState::File => PathElementDiff::File,
-            PathElementState::Symlink(diff) => {
-                PathElementDiff::Symlink(PathElementStateAction::Create(diff))
-            }
-            PathElementState::FilesystemBoundary => PathElementDiff::FilesystemBoundary,
-            PathElementState::Unknown(msg) => PathElementDiff::Unknown(msg),
-        }
-    }
-
-    pub fn delete(state: PathElementState) -> PathElementDiff {
-        match state {
-            PathElementState::Directory(diff) => {
-                PathElementDiff::Directory(PathElementStateAction::Delete(diff))
-            }
-            PathElementState::File => PathElementDiff::File,
-            PathElementState::Symlink(diff) => {
-                PathElementDiff::Symlink(PathElementStateAction::Delete(diff))
-            }
-            PathElementState::FilesystemBoundary => PathElementDiff::FilesystemBoundary,
-            PathElementState::Unknown(msg) => PathElementDiff::Unknown(msg),
-        }
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -89,7 +41,8 @@ impl PathDiff {
         match self {
             // Cases where more directories are involved (this shouldn't ever exist )
             PathDiff::Recreated {
-                state: LeftRightBoth::Both(_, _),
+                state:
+                    LeftRightBoth::Both(PathElementState::Directory(_), PathElementState::Directory(_)),
             } => unreachable!("Recreated directories should be modelled as Modified Directories"),
 
             // Cases where exactly one directory is involved
@@ -99,11 +52,7 @@ impl PathDiff {
             PathDiff::Recreated {
                 state: LeftRightBoth::Right(PathElementState::Directory(dir)),
             } => Some(dir),
-            PathDiff::Modified(PathElementDiff::Directory(dir)) => match dir {
-                PathElementStateAction::Create(dir)
-                | PathElementStateAction::Delete(dir)
-                | PathElementStateAction::Modify(dir) => Some(dir),
-            },
+            PathDiff::Modified(PathElementDiff::Directory(dir)) => Some(dir),
 
             // Catch all
             PathDiff::Modified(_) => None,
@@ -364,16 +313,18 @@ impl DiffCache {
 
             (Some(before_ft), Some(after_ft)) => match (before_ft, after_ft) {
                 (TypedPath::Symlink(before_ft), TypedPath::Symlink(after_ft)) => {
-                    PathDiff::Modified(PathElementDiff::Symlink(PathElementStateAction::Modify(
+                    PathDiff::Modified(PathElementDiff::Symlink(
                         self.make_symlink_diff(&before_ft, &after_ft),
-                    )))
+                    ))
                 }
                 (TypedPath::File(_), TypedPath::File(_)) => {
                     PathDiff::Modified(PathElementDiff::File)
                 }
                 (TypedPath::Directory(before), TypedPath::Directory(after)) => {
-                    PathDiff::Modified(PathElementDiff::Directory(PathElementStateAction::Modify(
-                        self.make_directory_diff(location, Some(&before), Some(&after)),
+                    PathDiff::Modified(PathElementDiff::Directory(self.make_directory_diff(
+                        location,
+                        Some(&before),
+                        Some(&after),
                     )))
                 }
                 (TypedPath::FilesystemBoundary(_), TypedPath::FilesystemBoundary(_)) => {
@@ -434,8 +385,26 @@ impl DiffCache {
 
         let contains_meaningful_changes = items.iter().any(|(child_path, _)| {
             let child_diff = self.get_diff(location.join(child_path));
-            //If child_diff has meaningful changes, break
-            true
+            match child_diff {
+                // If it changed type, then that's a meaningful change
+                PathDiff::Recreated { .. } => true,
+
+                // If it was modified we need to look in what way
+                PathDiff::Modified(path_element_diff) => match path_element_diff {
+                    PathElementDiff::Directory(diff) => diff.contains_meaningful_changes,
+                    PathElementDiff::Symlink(diff) => match diff {
+                        SymlinkDiff::Different { .. } => true,
+                        SymlinkDiff::DifferentInNix { .. } => true,
+                        SymlinkDiff::Identical { .. } => false,
+                        SymlinkDiff::IdenticalInNix { .. } => false,
+                        SymlinkDiff::NixGenerationChanged { .. } => false,
+                    },
+                    PathElementDiff::File => true,
+                    PathElementDiff::Nonexistent => true,
+                    PathElementDiff::FilesystemBoundary => true,
+                    PathElementDiff::Unknown(_) => true,
+                },
+            }
         });
 
         DirectoryDiff {
@@ -513,10 +482,4 @@ impl DiffCache {
             TypedPath::Unknown(_) => PathElementState::Unknown("Unknown".into()),
         }
     }
-}
-
-pub struct DiffCacheLayout;
-impl DiffLayout for DiffCacheLayout {
-    type DirectoryDiff = DirectoryDiff;
-    type SymlinkDiff = SymlinkDiff;
 }

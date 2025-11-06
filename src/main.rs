@@ -4,6 +4,7 @@ use clap::Parser as _;
 
 use crate::{cli::Cli, tui::tui};
 
+pub mod assesser;
 pub mod cli;
 pub mod cli_output;
 pub mod dir_diff;
