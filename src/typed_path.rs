@@ -1,7 +1,10 @@
 use std::{
+    fs::File,
     os::unix::fs::MetadataExt as _,
     path::{Path, PathBuf},
 };
+
+use crate::typed_actions::Typed;
 
 /// Keep in mind that path existence can change between creation and usage.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -58,14 +61,8 @@ impl DirectoryPath {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TypedPath {
-    Symlink(SymlinkPath),
-    Directory(DirectoryPath),
-    File(FilePath),
-    FilesystemBoundary(FilesystemBoundaryPath),
-    Unknown(UnknownPath),
-}
+pub type TypedPath =
+    Typed<SymlinkPath, DirectoryPath, FilePath, FilesystemBoundaryPath, UnknownPath>;
 
 impl From<ExistentPath> for TypedPath {
     fn from(path: ExistentPath) -> Self {

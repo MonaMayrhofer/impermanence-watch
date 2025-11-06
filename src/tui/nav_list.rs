@@ -41,14 +41,22 @@ pub struct NavListState<TLocation> {
 pub struct NavList<'a, TLocation> {
     adapter: &'a mut dyn NavListAdapter<Location = TLocation>,
     location: &'a TLocation,
+
+    //Style stuff
+    block: Block<'static>,
 }
 
 impl<'a, TLocation> NavList<'a, TLocation> {
     pub fn new(
         adapter: &'a mut impl NavListAdapter<Location = TLocation>,
         location: &'a TLocation,
+        block: Block<'static>,
     ) -> Self {
-        Self { adapter, location }
+        Self {
+            adapter,
+            location,
+            block,
+        }
     }
 }
 
