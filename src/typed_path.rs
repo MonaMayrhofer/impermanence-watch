@@ -83,15 +83,3 @@ impl From<ExistentPath> for TypedPath {
         }
     }
 }
-
-impl TypedPath {
-    pub(crate) fn as_path(&self) -> &Path {
-        match self {
-            TypedPath::Symlink(path) => path.as_path(),
-            TypedPath::Directory(path) => path.as_path(),
-            TypedPath::File(path) => path.as_path(),
-            TypedPath::FilesystemBoundary(path) => path.as_path(),
-            TypedPath::Unknown(path) => path.as_path(),
-        }
-    }
-}

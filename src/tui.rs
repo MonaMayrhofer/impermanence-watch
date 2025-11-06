@@ -25,7 +25,7 @@ use crate::{
     assesser::{AssessedAction, Assessment, AssessmentGrade},
     dir_diff::{DiffCache, DirectoryDiff, FileType, PathElementDiff, PathElementState},
     tui::nav_list::{NavList, NavListAdapter, NavListItem, NavListState},
-    typed_actions::{Action, ActionTag, Typed},
+    typed_actions::{Action, Typed},
 };
 
 pub(crate) fn tui() -> Result<()> {
@@ -307,6 +307,12 @@ impl App {
     ) {
         //let action: AssessedActionInverted = element.action.to_tagged();
 
+        enum ActionTag {
+            Created,
+            Deleted,
+            Identical,
+        }
+
         match &element.action {
             Action::Created(it) => render_state(self, path, it, ActionTag::Created, frame, area),
             Action::Deleted(it) => render_state(self, path, it, ActionTag::Deleted, frame, area),
@@ -327,7 +333,6 @@ impl App {
             let style = match tag {
                 ActionTag::Created => Style::default().green(),
                 ActionTag::Deleted => Style::default().red(),
-                ActionTag::Modified => unreachable!(),
                 ActionTag::Identical => Style::default().white(),
             };
             let block = Block::bordered().border_style(style);

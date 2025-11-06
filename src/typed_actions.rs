@@ -31,16 +31,3 @@ macro_rules! lift_typed {
         }
     };
 }
-
-pub(crate) enum StateOrDiff<TState, TDiff> {
-    Diff(TDiff),
-    State(TState),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum ActionTag {
-    Created,
-    Deleted,
-    Modified,
-    Identical,
-}

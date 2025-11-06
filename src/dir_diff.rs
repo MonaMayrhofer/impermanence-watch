@@ -107,30 +107,11 @@ pub(crate) enum LeftRightBoth<T> {
 }
 
 impl<T> LeftRightBoth<T> {
-    pub(crate) fn with_left(self, left: T) -> Self {
-        match self {
-            LeftRightBoth::Left(_) => LeftRightBoth::Left(left),
-            LeftRightBoth::Right(r) => LeftRightBoth::Both(left, r),
-            LeftRightBoth::Both(_, right) => LeftRightBoth::Both(left, right),
-        }
-    }
-
     pub(crate) fn with_right(self, right: T) -> Self {
         match self {
             LeftRightBoth::Left(l) => LeftRightBoth::Both(l, right),
             LeftRightBoth::Right(_) => LeftRightBoth::Right(right),
             LeftRightBoth::Both(left, _) => LeftRightBoth::Both(left, right),
-        }
-    }
-
-    pub(crate) fn map<F, U>(self, mut f: F) -> LeftRightBoth<U>
-    where
-        F: FnMut(T) -> U,
-    {
-        match self {
-            LeftRightBoth::Left(l) => LeftRightBoth::Left(f(l)),
-            LeftRightBoth::Right(r) => LeftRightBoth::Right(f(r)),
-            LeftRightBoth::Both(l, r) => LeftRightBoth::Both(f(l), f(r)),
         }
     }
 }

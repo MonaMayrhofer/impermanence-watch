@@ -8,7 +8,6 @@ pub(crate) mod assesser;
 pub(crate) mod cli;
 pub(crate) mod cli_output;
 pub(crate) mod dir_diff;
-pub(crate) mod thunk;
 pub(crate) mod tui;
 pub(crate) mod typed_actions;
 pub(crate) mod typed_path;
