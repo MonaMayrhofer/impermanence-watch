@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use clap::Parser as _;
 
 use crate::{cli::Cli, tui::tui};
@@ -17,11 +15,8 @@ fn main() {
     let args = Cli::parse();
 
     if args.interactive {
-        tui().unwrap();
+        tui(&args).unwrap();
     } else {
-        cli_output::print_dir_diff(
-            Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/"),
-            Path::new("/home/nionidh"),
-        );
+        cli_output::print_dir_diff(&args.before, &args.after);
     }
 }

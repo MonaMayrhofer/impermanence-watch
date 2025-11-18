@@ -23,12 +23,13 @@ use ratatui::{
 
 use crate::{
     assesser::{AssessedAction, Assessment, AssessmentGrade},
+    cli::Cli,
     dir_diff::{Differ, DirectoryDiff, TypedPathDiff, TypedPathState},
     tui::nav_list::{NavList, NavListAdapter, NavListItem, NavListState},
     typed_actions::{Action, FileType, Typed},
 };
 
-pub(crate) fn tui() -> Result<()> {
+pub(crate) fn tui(cli: &Cli) -> Result<()> {
     color_eyre::install()?;
 
     let mut open = OpenOptions::new();
@@ -56,7 +57,7 @@ pub(crate) fn tui() -> Result<()> {
     let mut terminal = ratatui::init();
 
     tracing::info!("Starting App");
-    let app = App::new();
+    let app = App::new(cli.before.clone(), cli.after.clone());
     let res = run_app(&mut terminal, app);
 
     tracing::info!("Shutting down");
@@ -241,7 +242,7 @@ struct App {
 }
 
 impl App {
-    fn new() -> Self {
+    fn new(before: PathBuf, after: PathBuf) -> Self {
         // let differ = Differ::new(
         //     Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/").to_owned(),
         //     Path::new("/home/nionidh").to_owned(),
@@ -249,9 +250,8 @@ impl App {
         let initial_path = PathBuf::new();
         let diff_cache = Differ {
             assessment_cache: HashMap::new(),
-            before_root: Path::new("/impermanence/current_root_on_boot_snapshot/home/nionidh/")
-                .to_owned(),
-            after_root: Path::new("/home/nionidh").to_owned(),
+            before_root: before,
+            after_root: after,
         };
 
         Self {

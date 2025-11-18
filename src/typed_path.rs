@@ -63,14 +63,9 @@ impl DirectoryPath {
 pub(crate) type TypedPath =
     Typed<SymlinkPath, DirectoryPath, FilePath, FilesystemBoundaryPath, UnknownPath>;
 
-impl From<ExistentPath> for TypedPath {
-    fn from(path: ExistentPath) -> Self {
-        if Some(path.0.symlink_metadata().unwrap().dev())
-            != path
-                .0
-                .parent()
-                .map(|it| it.symlink_metadata().unwrap().dev())
-        {
+impl TypedPath {
+    pub fn from_existent(path: ExistentPath, parent_fs: Option<u64>) -> Self {
+        if Some(path.0.symlink_metadata().unwrap().dev()) != parent_fs {
             TypedPath::FilesystemBoundary(FilesystemBoundaryPath(path))
         } else if path.0.is_symlink() {
             TypedPath::Symlink(SymlinkPath(path))

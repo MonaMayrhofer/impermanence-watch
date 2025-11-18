@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::Debug,
+    os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
 };
 
@@ -32,7 +33,21 @@ impl Differ {
         if !this.assessment_cache.contains_key(location) {
             let before = this.before_root.join(location);
             let after = this.after_root.join(location);
-            let new = calculate_diff(&before, &after)?;
+
+            let before_t = ExistentPath::try_from(before.to_path_buf()).ok().map(|it| {
+                TypedPath::from_existent(
+                    it,
+                    this.before_root.symlink_metadata().ok().map(|it| it.dev()),
+                )
+            });
+            let after_t = ExistentPath::try_from(after.to_path_buf()).ok().map(|it| {
+                TypedPath::from_existent(
+                    it,
+                    this.after_root.symlink_metadata().ok().map(|it| it.dev()),
+                )
+            });
+
+            let new = calculate_diff(before_t, after_t)?;
 
             let mut assesser = Assesser { diff_cache: this };
             let assessment = assesser.assess(location, new);
@@ -57,15 +72,8 @@ impl AssessmentCache for &mut Differ {
 
 // ======================
 
-fn calculate_diff(before: &Path, after: &Path) -> Option<PathDiff> {
-    let before_t = ExistentPath::try_from(before.to_path_buf())
-        .ok()
-        .map(TypedPath::from);
-    let after_t = ExistentPath::try_from(after.to_path_buf())
-        .ok()
-        .map(TypedPath::from);
-
-    match (before_t, after_t) {
+fn calculate_diff(before: Option<TypedPath>, after: Option<TypedPath>) -> Option<PathDiff> {
+    match (before, after) {
         (None, None) => None,
 
         (None, Some(after_ft)) => Some(PathDiff::Recreated {
