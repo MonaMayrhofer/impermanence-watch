@@ -56,7 +56,7 @@ impl SymlinkPath {
 }
 impl DirectoryPath {
     pub(crate) fn read_dir(&self) -> std::fs::ReadDir {
-        std::fs::read_dir(self.0.as_path()).expect("path has already been checked to exist and be a directory. The filesystem must have changed while the program was running.")
+        std::fs::read_dir(self.0.as_path()).unwrap_or_else(|_| panic!("path '{}' has already been checked to exist and be a directory. The filesystem must have changed while the program was running.", self.0.as_path().display()))
     }
 }
 
